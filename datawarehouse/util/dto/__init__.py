@@ -1,0 +1,3 @@
+"""
+Ideally Id like to generate the dto's off of the models...
+"""

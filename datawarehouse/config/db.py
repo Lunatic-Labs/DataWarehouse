@@ -5,8 +5,8 @@ from sqlalchemy import create_engine, orm, schema, inspect, event
 log = logging.getLogger(__name__)
 __THIS__ = sys.modules[__name__]
 
-Session = orm.scoped_session(orm.session_maker())
-# register(Session)
+Session = orm.scoped_session(orm.sessionmaker())
+# register(session)
 metadata = schema.MetaData()
 
 
@@ -15,13 +15,13 @@ def make_engine(db_url, pool_size=5, max_overflow=10):
     return engine
 
 
-class DBConfig(object):
+class dbconfig(object):
     def __init__(self, **settings):
         log.debug(f"initializing {__name__} with settings {settings}")
 
         self.__dict__ = {**self.__dict__, **settings}
         self._settings = settings
-        self._engine = make_engine(settings["db_url"])
+        self._engine = make_engine(db_url=settings["db_url"])
         self._scoped_session_factory = Session
         self._scoped_session_factory.configure(bind=self._engine)
         self._meta = metadata
@@ -49,5 +49,5 @@ class DBConfig(object):
 
 
 settings = {"db_url": os.environ.get("DATABASE_URL")}
-config = DBConfig(**settings)
+config = dbconfig(**settings)
 setattr(__THIS__, "config", config)

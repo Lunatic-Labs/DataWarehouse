@@ -6,7 +6,20 @@ OS = platform.system()
 with open("README.md") as readme_file:
     readme = readme_file.read()
 
-requirements = ["flask", "flask-sqlalchemy", "sqlalchemy", "python-dotenv"]
+requirements = [
+    "flask",
+    "flask-sqlalchemy",
+    "sqlalchemy",
+    "python-dotenv",
+]
+
+if "PyPy" in sys.version:
+    requirements.append("psycopg2cffi")
+else:
+    if OS == "Darwin" or OS == "Linux":
+        requirements.append("psycopg2-binary")
+    else:
+        requirements.append("psycopg2")
 
 setup_requirements = ["setuptools_git"]
 

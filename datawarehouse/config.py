@@ -6,6 +6,8 @@ class Config:
     DEBUG = False
 
 
+# different config objects allow us to run the application in different
+# modes, such as testing, development, production... etc.
 class DevelopmentConfig(Config):
     # env vars here
     DATABASE_URL = os.environ.get("DATABASE_URL")

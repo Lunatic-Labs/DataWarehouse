@@ -9,12 +9,14 @@ Session = orm.scoped_session(orm.sessionmaker())
 # register(session)
 metadata = schema.MetaData()
 
-
+# passthrough function to remove cumbersome arguments...
 def make_engine(db_url, pool_size=5, max_overflow=10):
     engine = create_engine(db_url, pool_size=pool_size, max_overflow=max_overflow)
     return engine
 
 
+# the dbconfig object allows for a creation of a database instance,
+# and the connection to an existing one. All db info will be available through this.
 class dbconfig(object):
     def __init__(self, **settings):
         log.debug(f"initializing {__name__} with settings {settings}")
@@ -48,6 +50,9 @@ class dbconfig(object):
         return self._scoped_session_factory()
 
 
+# the dbconfig object allows for a creation of a database instance,
+# and the connection to an existing one. All db info will be available through this. # the dbconfig object allows for a creation of a database instance,
+# and the connection to an existing one. All db info will be available through this.
 settings = {"db_url": os.environ.get("DATABASE_URL")}
 config = dbconfig(**settings)
 setattr(__THIS__, "config", config)

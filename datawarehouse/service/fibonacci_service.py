@@ -2,7 +2,7 @@ from datawarehouse.config.db import config as db
 from datawarehouse.model import fibonacci
 from datawarehouse.service import BaseService
 
-from sqlalchemy import func, insert
+from sqlalchemy import func, insert, delete
 
 
 class FibonacciService(BaseService):
@@ -31,7 +31,18 @@ class FibonacciService(BaseService):
             last_no = self.get_number(last_id)
             sec_last_no = self.get_number(last_id - 1) if last_id > 1 else 0
             stmt = insert(fibonacci).values(number=last_no + sec_last_no)
-            # self.session.begin()
+            try:
+                self.session.execute(stmt)
+                self.session.commit()
+            except:
+                return "failed. The numbers are probably too high. Ping the api/fibonacci/reset/ endpoint to reset the numbers."
 
-            self.session.execute(stmt)
-            self.session.commit()
+        return str(last_no + sec_last_no)
+
+    @classmethod
+    def reset(self):
+        self.session.execute(delete(fibonacci))
+        self.session.execute(fibonacci.insert().values(number=0))
+        self.session.execute(fibonacci.insert().values(number=1))
+        self.session.commit()
+        return

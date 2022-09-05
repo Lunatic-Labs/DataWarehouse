@@ -29,7 +29,15 @@ def get_number():
 def increment_n_times():
     # the request object: read here: https://flask.palletsprojects.com/en/2.2.x/api/#flask.Request
     # contains information about the incoming request.
+    # you can test this argumnet by adding a query string. eg. http://127.0.0.1:5000/api/fibonacci/?increment=1000
+    # anything after a question mark is the query string.
     args = request.args
     iterate = int(args["increment"]) if "increment" in args.keys() else 1
-    FibonacciService.increment_n_times(increment=iterate)
-    return "incremented"
+    return_string = FibonacciService.increment_n_times(increment=iterate)
+    return return_string
+
+
+@fibonacci_bp.route("/reset", methods=["POST", "GET"])
+def reset_fibonacci():
+    FibonacciService.reset()
+    return "Fibonacci sequence has been reset."

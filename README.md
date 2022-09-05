@@ -15,4 +15,8 @@ for example:
 * `DATABASE_URL` - either your local or the online database url. Example: `DATABASE_URL='postgresql://postgres:postgres@localhost:5432/data_warehouse'`
 * `FLASK_APP` - The app name. Set this to `datawarehouse`
 #### Suggested
-* `FLASK_ENV` - This tells flask to either run the app in production mode or developer mode. You probably want developer mode. Either `production` or `develop`
+* `FLASK_DEBUG` - This tells flask to either run the app in production mode or developer mode. You probably want developer mode. Either `0` for off, or `1` for on.
+
+
+## Running the app
+after completing the setup process, use command `flask run` in the console to run. 

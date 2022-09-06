@@ -17,10 +17,10 @@ fibonacci_bp = Blueprint("fibonacci_bp", __name__, url_prefix="/fibonacci")
 
 @fibonacci_bp.route("/", methods=["GET"])
 def get_number():
-    index = None
+    index = -1
     if "index" in request.args:
         index = request.args["index"]
-    return str(FibonacciService.get_number(index))
+    return str(FibonacciService.get_number_from_relative_id(index))
 
 
 # post a number, and the db will increment

@@ -6,8 +6,6 @@
     more code every time because they will be generated on startup.
 
 """
-
-
 from sqlalchemy import Table
 from sqlalchemy.ext.declarative import declared_attr
 from datawarehouse.config import db
@@ -23,8 +21,13 @@ class utilsMixin(object):
     def __tablename__(cls):
         return cls.__name__.lower()
 
+    # return a row as a dictionary. Useful for returning json-ish types. May not work completely
     def as_dict(self):
         return {c.name: str(getattr(self, c.name)) for c in self.__table__.columns}
+
+    # returns the primary keys of the table.
+    def pk(cls):
+        return cls.primary_key.columns
 
 
 # Looks at the specified schema in the database defined by the Env var

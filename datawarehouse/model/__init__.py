@@ -53,3 +53,5 @@ tables = {do.__table__.name: do.__table__ for do in declarative_objects}
 # This way, we can import tables by
 # `from datawarehouse.model import example_table_name` to get the models
 [setattr(__THIS__, table_name, tables[table_name]) for table_name in tables]
+
+# def generate_table_given_args(kwargs*):

@@ -61,6 +61,7 @@ class FibonacciService(BaseService):
                 self.session.execute(stmt)
                 self.session.commit()
             except:
+                self.session.rollback()
                 return "failed. The numbers are probably too high. Ping the api/fibonacci/reset/ endpoint to reset the numbers."
 
         return str(last_no + sec_last_no)

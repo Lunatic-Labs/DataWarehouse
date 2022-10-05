@@ -17,12 +17,12 @@ class HandshakeService:
 
     def __insert_data(self, table, source):
         # Loop through the current `source`'s metrics to get actual values.
-        for m in source["metrics"]:
+        for metric in source["metrics"]:
             insert = table.insert().values(
-                data_type=m["data_type"],
-                units=m["units"],
-                name=m["name"],
-                asc=m["asc"],
+                data_type=metric["data_type"],
+                units=metric["units"],
+                name=metric["name"],
+                asc=metric["asc"],
             )
             self.__connection.execute(insert)
 

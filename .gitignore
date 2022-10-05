@@ -4,3 +4,4 @@
 \.env
 \.pyc
 \.DS_Store
+datawarehouse/__pycache__/__init__.cpython-38.pyc

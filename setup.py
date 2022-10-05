@@ -36,7 +36,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     description="DataWarehouse",
-    install_requires=requirements,
+    install_requires=requirements + test_requirements,
     long_description=readme,
     incluse_package_data=True,
     name="DataWarehouse",
@@ -44,4 +44,6 @@ setup(
     setup_requires=setup_requirements,
     version="0.0.1",
     zip_safe=False,
+    tests_require=test_requirements,
+    extras_require={"dev": requirements + test_requirements},
 )

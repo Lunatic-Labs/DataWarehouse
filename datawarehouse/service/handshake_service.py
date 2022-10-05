@@ -25,12 +25,12 @@ class HandshakeService(BaseService):
     @classmethod
     def prepare_tables(self, properties):
         uids = self._insert_metadata(properties)
+        # the creating of the tables will go here.
         return uids
 
     @classmethod
     def _insert_metadata(self, json_properties):
         # NOTE: Eventually we will add the feature to add a source/metric to an existing group... Will have to rework this later.
-        # json_properties["group_uid"] = self._add_group(json_properties)
         uids = self._add_group(**json_properties)
         return uids
 
@@ -45,16 +45,21 @@ class HandshakeService(BaseService):
         }
 
         # The double asterisk is a way to unpack a dictionary. read more here https://medium.com/swlh/how-to-pack-and-unpack-data-in-python-tuples-and-dictionaries-55d218c65674
+        # commit data to db
         stmt = insert(group).values(**group_properties)
         self.session.begin()
         self.session.execute(stmt)
         self.session.commit()
-        source_uids = self._add_sources(group_uid, sources)
-        return {group_uid: source_uids}
+
+        # add source to db
+        sources = self._add_sources(group_uid, sources)
+
+        group_properties.update(dict(sources=sources, group_uid=group_uid))
+        return group_properties
 
     @classmethod
     def _add_sources(self, group_uid, sources):
-        source_uids = {}
+        source_uids = []
         for s in sources:
             source_uid = uuid4()
             source_props = {
@@ -62,18 +67,28 @@ class HandshakeService(BaseService):
                 "group_uid": group_uid,
                 "name": s["name"],
             }
+
+            # commit data to db
             stmt = insert(source).values(**source_props)
             self.session.begin()
             self.session.execute(stmt)
             self.session.commit()
-            metric_uids = self._add_metrics(group_uid, source_uid, s["metrics"])
-            source_uids[source_uid] = metric_uids
+
+            # add metrics to db
+            metrics = self._add_metrics(source_uid, s["metrics"])
+
+            # add updated metrics to dict, add source_uid
+            s.update(dict(metrics=metrics, source_uid=source_uid))
+            source_uids.append(s)
+        return source_uids
 
     @classmethod
-    def _add_metrics(self, group_uid, source_uid, metrics):
+    def _add_metrics(self, source_uid, metrics):
         metric_uids = []
         for m in metrics:
             metric_uid = uuid4()
+
+            # commit data to db
             stmt = insert(metric).values(
                 source_uid=source_uid, metric_uid=metric_uid, **m
             )
@@ -81,5 +96,7 @@ class HandshakeService(BaseService):
             self.session.execute(stmt)
             self.session.commit()
 
-            metric_uids.append(metric_uid)
+            # add metric_uid to dict
+            m.update(dict(metric_uid=metric_uid))
+            metric_uids.append(m)
         return metric_uids

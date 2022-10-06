@@ -1,6 +1,8 @@
 import json
 import sqlalchemy
 
+from datawarehouse.service import BaseService
+
 # HandshakeService:
 # 1. hss = HandshakeService(db_url).
 #   (a) Engine will be initialized.
@@ -9,7 +11,7 @@ import sqlalchemy
 # 2. hss.create_and_insert_tables(json_data): Create the tables and insert the json data.
 #   (a) __insert_data(): Inserts the actual data into the table.
 # 3. hss.close_connection(): Close the connection.
-class HandshakeService:
+class HandshakeService(BaseService):
     def __init__(self, url):
         self.__engine = sqlalchemy.create_engine(url)
         self.__connection = self.__engine.connect()

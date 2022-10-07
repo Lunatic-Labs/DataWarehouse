@@ -1,62 +1,69 @@
-import json
 import sqlalchemy
 
 from datawarehouse.service import BaseService
 
-# HandshakeService:
-# 1. hss = HandshakeService(db_url).
-#   (a) Engine will be initialized.
-#   (b) Connection will be initialized.
-#   (c) Metadata_obj will be initialized.
-# 2. hss.create_and_insert_tables(json_data): Create the tables and insert the json data.
-#   (a) __insert_data(): Inserts the actual data into the table.
-# 3. hss.close_connection(): Close the connection.
 class HandshakeService(BaseService):
     def __init__(self, url):
-        self.__engine = sqlalchemy.create_engine(url)
-        self.__connection = self.__engine.connect()
-        self.__metadata_obj = sqlalchemy.MetaData()
+        self._engine = sqlalchemy.create_engine(url)
+        self._connection = self._engine.connect()
+        self._metadata_obj = sqlalchemy.MetaData()
 
-    def __insert_data(self, table, source):
-        # Loop through the current `source`'s metrics to get actual values.
-        for metric in source["metrics"]:
-            insert = table.insert().values(
-                data_type=metric["data_type"],
-                units=metric["units"],
-                name=metric["name"],
-                asc=metric["asc"],
-            )
-            self.__connection.execute(insert)
+    """
+    createTables(self, data) -> void.
+    Public method. Takes data: JSON, and does the following:
+        1. Create tables based off of the `source` name and append
+           a unique number.
+        2. Append the source's `name` of source's type `data_type`
+           with a unique MUID.
+        3. Appends a timestamp column.
+        4. Add the table to the data_warehouse database.
+    """
 
-    def create_and_insert_tables(self, data):
+    def createTables(self, data):
         # Used for keeping track of the table number and a unique name.
         table_num = 0
+
         # Navigate through `sources` part of the dictionary.
         for source in data["sources"]:
-            # Create a table based off of the current source.
             table = sqlalchemy.Table(
-                source["name"] + str(table_num),  # Unique name.
-                self.__metadata_obj,
-                sqlalchemy.Column(
-                    "metric_uid",
-                    sqlalchemy.Integer,
-                    primary_key=True,
-                    autoincrement=True,
-                ),
-                sqlalchemy.Column("data_type", sqlalchemy.String),
-                sqlalchemy.Column("units", sqlalchemy.String),
-                sqlalchemy.Column("name", sqlalchemy.String),
-                sqlalchemy.Column("asc", sqlalchemy.Boolean),
+                "{}{}".format(source["name"], str(table_num)),
+                self._metadata_obj,
             )
 
+            # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
+            muid = 1
+            for metric in source["metrics"]:
+                col_name = "{} (MUID: {})".format(metric["name"], muid)
+                col_type = self._getType(metric["data_type"])
+                table.append_column(sqlalchemy.Column(col_name, col_type))
+                muid += 1
+            table.append_column(sqlalchemy.Column("timestamp", sqlalchemy.DateTime))
+
             # Insert the table into the database.
-            table.create(self.__engine)
-            self.__insert_data(table, source)
+            table.create(self._engine)
             table_num += 1
 
-    def close_connection(self):
-        self.__connection.close()
+    """
+    _getType(self, type) -> sqlalchemy.Type.
+    Private method. Takes type: String, and determines the
+    appropriate sqlalchemy.Type to return.
+    """
 
-    def write_json(self, data):
-        with open("data.json", "w") as f:
-            json.dump(data, f)
+    def _getType(self, type):
+        if type == "string":
+            return sqlalchemy.String
+        elif type == "integer":
+            return sqlalchemy.Integer
+        elif type == "float":
+            return sqlalchemy.Float
+        elif type == "bool":
+            return sqlalchemy.Boolean
+        assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type)
+
+    """
+    closeConnection(self) -> void.
+    Public method. Closes the database connection.
+    """
+
+    def closeConnection(self):
+        self._connection.close()

@@ -12,7 +12,7 @@ def handshake_route():
     if not check_json_format(json):
         return "Invalid json format. Please check the documentation.", 500
 
-    return HandshakeService.prepare_tables(json)
+    return HandshakeService.prepareTables(json)
 
 
 def check_json_format(json):

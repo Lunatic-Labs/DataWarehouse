@@ -1,0 +1,29 @@
+{
+        "classification": "testing",
+        "group_name": "Watertower",
+        "sources": [
+                {
+                        "metrics": [
+                                {
+                                        "asc": false,
+                                        "data_type": "float",
+                                        "name": "volume",
+                                        "units": "gallons"
+                                },
+                                {
+                                        "metrics": [
+                                                {
+                                                        "asc": true,
+                                                        "data_type": "float",
+                                                        "name": "water_temperature",
+                                                        "units": "kelvin"
+                                                }
+                                        ],
+                                        "name": [
+                                                "Watertower1"
+                                        ]
+                                }
+                        ]
+                }
+        ]
+}

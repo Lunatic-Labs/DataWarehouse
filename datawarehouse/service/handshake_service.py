@@ -190,14 +190,17 @@ class HandshakeService(BaseService):
 
     @classmethod
     def _getType(self, type):
-        if type == "string":
-            return sqlalchemy.String
-        elif type == "integer":
+        # Horrible code, but this will be refactored later.
+        # This is just for testing for now. I am leaving the
+        # string comparisons also for testing purposes.
+        if type == "integer" or (type(type) == type(0) and type == 1):
             return sqlalchemy.Integer
-        elif type == "float":
+        elif type == "float" or (type(type) == type(0.0) and type == 2):
             return sqlalchemy.Float
-        elif type == "bool":
+        elif type == "bool" or (type(type) == type(False) and type == 3):
             return sqlalchemy.Boolean
+        elif type == "string" or (type(type) == type("data") and type == 4):
+            return sqlalchemy.String
         assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type)
 
     """

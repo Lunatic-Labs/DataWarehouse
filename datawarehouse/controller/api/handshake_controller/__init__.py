@@ -3,7 +3,6 @@ from datawarehouse.service.handshake_service import HandshakeService
 
 handshake_bp = Blueprint("handshake_bp", __name__, url_prefix="/prepare")
 
-
 @handshake_bp.route("/", methods=["POST"])
 def handshake_route():
     # See top of file for format of this json

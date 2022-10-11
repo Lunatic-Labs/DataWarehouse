@@ -34,6 +34,7 @@ class HandshakeService(BaseService):
     def prepareTables(self, properties):
         uids = self._insertMetadata(properties)
         # the creating of the tables will go here.
+        self._createTables(properties)
         return uids
 
     """
@@ -156,20 +157,21 @@ class HandshakeService(BaseService):
         4. Add the table to the data_warehouse database.
     """
 
+    @classmethod
     def _createTables(self, data):
         # Used for keeping track of the table number and a unique name.
         table_num = 0
 
         # Navigate through `sources` part of the dictionary.
-        for source in data["sources"]:
+        for src in data["sources"]:
             table = sqlalchemy.Table(
-                "{}{}".format(source["name"], str(table_num)),
+                "{}{}".format(src["name"], str(table_num)),
                 self._metadata_obj,
             )
 
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
             muid = 1
-            for metric in source["metrics"]:
+            for metric in src["metrics"]:
                 col_name = "{} (MUID: {})".format(metric["name"], muid)
                 col_type = self._getType(metric["data_type"])
                 table.append_column(sqlalchemy.Column(col_name, col_type))
@@ -186,6 +188,7 @@ class HandshakeService(BaseService):
     appropriate sqlalchemy.Type to return.
     """
 
+    @classmethod
     def _getType(self, type):
         if type == "string":
             return sqlalchemy.String

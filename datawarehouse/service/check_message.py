@@ -8,12 +8,16 @@ class checkJsonFile:
     def __init__(self, data):
         self.data = data
 
+    # Checks all the keys in each dictionary to see if the key exist
     def check_dictionaries(self, val):
         found = False
+
+        # Checks the outer layer in the dictionary
         for i in data:
             if val in data:
                 found = True
 
+        # Checks the source and metric layer
         for i in data["sources"]:
             for j in i["metrics"]:
                 if val in j:
@@ -21,6 +25,7 @@ class checkJsonFile:
 
         return found
 
+    # Checks to see if all the required fields are provided in the JSON file
     def required_fields(self):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]

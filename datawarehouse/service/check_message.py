@@ -1,4 +1,3 @@
-import sqlalchemy
 import json
 
 with open("sample.json") as f:
@@ -6,33 +5,41 @@ with open("sample.json") as f:
 
 
 class checkJsonFile:
-    @classmethod
-    def check_dictionaries(self, data, val):
-        # found = False
-
-        sources = data["sources"]
-
-        for i in sources:
-            found = sources.get(val)
-            print(found)
+    def __init__(self, data):
+        self.data = data
 
     @classmethod
-    def required_fields(self, data):
+    def check_dictionaries(self, val):
+        for i in data["sources"]:
+            print(i.values())
+        #     if val in i:
+        #         return True
+        # return False
 
+    @classmethod
+    def required_fields(self):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]
         req_metric_layer = ["data_type", "name"]
 
         for i in req_outer_layer:
-            if not data.get(i):
+            if i not in data:
                 print("Missing required field:", i)
 
         for i in req_source_layer:
-            if not self.check_dictionaries(data["sources"], i):
+            if not self.check_dictionaries(i):
                 print("Missing required field:", i)
 
+        # for i in req_metric_layer:
+        #     if not self.check_dictionaries(i):
+        #         print("Missing required field:", i)
 
-checkJsonFile.required_fields(data)
+
+# d = checkJsonFile(data)
+# print(d.data)
+
+checker = checkJsonFile(data)
+checker.required_fields()
 
 
 # Outermost Layer

@@ -8,35 +8,36 @@ class checkJsonFile:
     def __init__(self, data):
         self.data = data
 
-    @classmethod
     def check_dictionaries(self, val):
-        for i in data["sources"]:
-            print(i.values())
-        #     if val in i:
-        #         return True
-        # return False
+        found = False
+        for i in data:
+            if val in data:
+                found = True
 
-    @classmethod
+        for i in data["sources"]:
+            for j in i["metrics"]:
+                if val in j:
+                    found = True
+
+        return found
+
     def required_fields(self):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]
         req_metric_layer = ["data_type", "name"]
 
         for i in req_outer_layer:
-            if i not in data:
+            if not self.check_dictionaries(i):
                 print("Missing required field:", i)
 
         for i in req_source_layer:
             if not self.check_dictionaries(i):
                 print("Missing required field:", i)
 
-        # for i in req_metric_layer:
-        #     if not self.check_dictionaries(i):
-        #         print("Missing required field:", i)
+        for i in req_metric_layer:
+            if not self.check_dictionaries(i):
+                print("Missing required field:", i)
 
-
-# d = checkJsonFile(data)
-# print(d.data)
 
 checker = checkJsonFile(data)
 checker.required_fields()

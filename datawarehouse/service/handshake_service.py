@@ -24,10 +24,10 @@ class HandshakeService(BaseService):
         return self._engine.connect()
 
     """
-    prepareTables(self, properties) -> dict 
+    prepareTables(self, properties) -> dict
     Public method. Takes properties: JSON and does the following:
         1. inserts the metadata into the meta tables (group, source, metric)
-        2. kicks off the generation of the described tables 
+        2. kicks off the generation of the described tables
     """
 
     @classmethod
@@ -54,7 +54,7 @@ class HandshakeService(BaseService):
     _addGroup(self, group_name, location, classification, sources) -> dict
     Private Method. Takes group_name: string, location: optional string, classification: optional string, and sources: required array of dicts
     Does the following :
-        1. generates a unique uuid identifier 
+        1. generates a unique uuid identifier
         2. commits the group data to the group table in the database
         3. begins insertion of source data by calling _addSources()
         4. returns the gathered data
@@ -87,7 +87,7 @@ class HandshakeService(BaseService):
     _addSource(self, group_uid, sources) -> dict
     Private Method. Takes group_uid: uuid4, sources: required array of dicts
     Does the following :
-        1. generates a unique uuid identifier for the source and adds it to the json data 
+        1. generates a unique uuid identifier for the source and adds it to the json data
         2. commits the source data to the source table in the database
         3. begins insertion of metric data by calling _addMetrics()
         4. returns the gathered data
@@ -122,7 +122,7 @@ class HandshakeService(BaseService):
     _addMetrics(self, source_uid, metrics) -> dict
     Private Method. Takes source_uid: uuid4, metrics: required array of dicts
     Does the following :
-        1. generates a unique uuid identifier for the metric and adds it to the json data 
+        1. generates a unique uuid identifier for the metric and adds it to the json data
         2. commits the metric data to the metric table in the database
         3. returns the gathered data
     """
@@ -193,13 +193,13 @@ class HandshakeService(BaseService):
         # Horrible code, but this will be refactored later.
         # This is just for testing for now. I am leaving the
         # string comparisons also for testing purposes.
-        if type == "integer" or (type(type) == type(0) and type == 1):
+        if type == "integer":
             return sqlalchemy.Integer
-        elif type == "float" or (type(type) == type(0.0) and type == 2):
+        elif type == "float":
             return sqlalchemy.Float
-        elif type == "bool" or (type(type) == type(False) and type == 3):
+        elif type == "bool":
             return sqlalchemy.Boolean
-        elif type == "string" or (type(type) == type("data") and type == 4):
+        elif type == "string":
             return sqlalchemy.String
         assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type)
 

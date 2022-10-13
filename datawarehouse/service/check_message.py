@@ -1,51 +1,163 @@
 import json
+from typing import Optional
 
-with open("sample.json") as f:
-    data = json.load(f)
+# with open("sample.json") as f:
+#     data = json.load(f)
+
+
+data = {
+    "classification": "testing",
+    "group_name": "Porter-Mckinney",
+    "sources": [
+        {
+            "metrics": [
+                {
+                    "asc": False,
+                    "data_type": "integer",
+                    "name": "WeueKSwmjcGsYVThpwuf",
+                    "units": "students",
+                }
+            ],
+            "name": "Spedometer",
+        }
+    ],
+}
 
 
 class checkJsonFile:
     def __init__(self, data):
         self.data = data
 
-    # Checks all the keys in each dictionary to see if the key exist
-    def check_dictionaries(self, val):
-        found = False
+    # Loops through the keys in the dictionaries
+    def check_dict_keys(self):
+        found_req = True
+        found_opt = True
 
-        # Checks the outer layer in the dictionary
-        for i in data:
-            if val in data:
-                found = True
+        val = None
+        layer = None
 
-        # Checks the source and metric layer
-        for i in data["sources"]:
-            for j in i["metrics"]:
-                if val in j:
-                    found = True
+        # Outer Layer
+        for key in data.keys():
+            layer = "outer"
+            check_req = self.required_fields(key, layer)
+            check_opt = self.optional_fields(key, layer)
+            # print(check_opt)
 
-        return found
+            if not check_req:
+                if not check_opt:
+                    found_req = False
+                    found_opt = False
+                    val = key
+                    break
+                else:
+                    found_opt = True
+                    val = key
+                    break
+
+        # source Layer
+        if found_req:
+            for i in data["sources"]:
+                for key in i.keys():
+                    # print(key)
+                    layer = "source"
+                    check_req = self.required_fields(key, layer)
+                    check_opt = self.optional_fields(key, layer)
+
+                    if not check_req:
+                        if not check_opt:
+                            found_req = False
+                            found_opt = False
+                            val = key
+                            break
+                        else:
+                            found_opt = True
+                            val = key
+                            break
+
+        # Metric Layer
+        if found_req:
+            for i in data["sources"]:
+                for j in i["metrics"]:
+                    for key in j.keys():
+                        layer = "metric"
+                        check_req = self.required_fields(key, layer)
+                        check_opt = self.optional_fields(key, layer)
+
+                        if not check_req:
+                            if not check_opt:
+                                found_req = False
+                                found_opt = False
+                                val = key
+                                break
+                            else:
+                                found_opt = True
+                                val = key
+                                break
+
+        if not found_req and found_opt:
+            print("Missing required field:", val)
+        elif not found_opt or not found_req:
+            print("Not a supported key", val)
 
     # Checks to see if all the required fields are provided in the JSON file
-    def required_fields(self):
+    def required_fields(self, val, layer):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]
         req_metric_layer = ["data_type", "name"]
 
-        for i in req_outer_layer:
-            if not self.check_dictionaries(i):
-                print("Missing required field:", i)
+        found = False
 
-        for i in req_source_layer:
-            if not self.check_dictionaries(i):
-                print("Missing required field:", i)
+        if layer == "outer":
+            for i in req_outer_layer:
+                if val in i:
+                    found = True
 
-        for i in req_metric_layer:
-            if not self.check_dictionaries(i):
-                print("Missing required field:", i)
+        if layer == "source":
+            for i in req_source_layer:
+                if val in i:
+                    found = True
+
+        if layer == "metric":
+            for i in req_metric_layer:
+                if val in i:
+                    found = True
+
+        return found
+
+    # Checks all the accepted optional fields
+    def optional_fields(self, val, layer):
+        # print("checking: {}".format(val))
+        opt_outer_layer = ["classification", "location"]
+        opt_source_layer = ["tz_info"]
+        opt_metric_layer = ["asc", "units"]
+
+        found = False
+
+        if layer == "outer":
+            for i in opt_outer_layer:
+                if val in i:
+                    found = True
+
+        if layer == "source":
+            for i in opt_source_layer:
+                if val in i:
+                    found = True
+
+        if layer == "metric":
+            for i in opt_metric_layer:
+                if val in i:
+                    found = True
+
+        return found
 
 
 checker = checkJsonFile(data)
-checker.required_fields()
+checker.check_dict_keys()
+
+# check all the keys and see if it belongs in the table
+# check if it is optional if it is not in the required
+
+# optional
 
 
 # Outermost Layer

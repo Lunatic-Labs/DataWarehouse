@@ -1,10 +1,11 @@
 import json
 from typing import Optional
 
+# Would use if opening a JSON file
 # with open("sample.json") as f:
 #     data = json.load(f)
 
-
+# Dictionary for testing
 data = {
     "classification": "testing",
     "group_name": "Porter-Mckinney",
@@ -41,8 +42,8 @@ class checkJsonFile:
             layer = "outer"
             check_req = self.required_fields(key, layer)
             check_opt = self.optional_fields(key, layer)
-            # print(check_opt)
 
+            # Checks if required or optional key exist
             if not check_req:
                 if not check_opt:
                     found_req = False
@@ -54,15 +55,15 @@ class checkJsonFile:
                     val = key
                     break
 
-        # source Layer
+        # Source Layer
         if found_req:
             for i in data["sources"]:
                 for key in i.keys():
-                    # print(key)
                     layer = "source"
                     check_req = self.required_fields(key, layer)
                     check_opt = self.optional_fields(key, layer)
 
+                    # Checks if required or optional key exist
                     if not check_req:
                         if not check_opt:
                             found_req = False
@@ -83,6 +84,7 @@ class checkJsonFile:
                         check_req = self.required_fields(key, layer)
                         check_opt = self.optional_fields(key, layer)
 
+                        # Checks if required or optional key exist
                         if not check_req:
                             if not check_opt:
                                 found_req = False
@@ -93,13 +95,13 @@ class checkJsonFile:
                                 found_opt = True
                                 val = key
                                 break
-
+        # Prints whether the field is missing or not supported
         if not found_req and found_opt:
             print("Missing required field:", val)
         elif not found_opt or not found_req:
             print("Not a supported key", val)
 
-    # Checks to see if all the required fields are provided in the JSON file
+    # Checks to see if the val is one of the required fields
     def required_fields(self, val, layer):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]
@@ -124,9 +126,8 @@ class checkJsonFile:
 
         return found
 
-    # Checks all the accepted optional fields
+    # Checks to see if the val is one of the optional fields
     def optional_fields(self, val, layer):
-        # print("checking: {}".format(val))
         opt_outer_layer = ["classification", "location"]
         opt_source_layer = ["tz_info"]
         opt_metric_layer = ["asc", "units"]
@@ -153,12 +154,6 @@ class checkJsonFile:
 
 checker = checkJsonFile(data)
 checker.check_dict_keys()
-
-# check all the keys and see if it belongs in the table
-# check if it is optional if it is not in the required
-
-# optional
-
 
 # Outermost Layer
 # group_name    string      required        Title of the group

@@ -170,12 +170,10 @@ class HandshakeService(BaseService):
             )
 
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
-            muid = 1
             for metric in src["metrics"]:
-                col_name = "{} (MUID: {})".format(metric["name"], muid)
+                col_name = "{}".format(metric["name"]) # May need to be changed later to the UID.
                 col_type = self._getType(metric["data_type"])
                 table.append_column(sqlalchemy.Column(col_name, col_type))
-                muid += 1
             table.append_column(sqlalchemy.Column("timestamp", sqlalchemy.DateTime))
 
             # Insert the table into the database.
@@ -190,9 +188,6 @@ class HandshakeService(BaseService):
 
     @classmethod
     def _getType(self, type):
-        # Horrible code, but this will be refactored later.
-        # This is just for testing for now. I am leaving the
-        # string comparisons also for testing purposes.
         if type == "integer":
             return sqlalchemy.Integer
         elif type == "float":

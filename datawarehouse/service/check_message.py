@@ -7,8 +7,8 @@ from typing import Optional
 
 # Dictionary for testing
 data = {
+    "group_name": "Data Dogs",
     "classification": "testing",
-    "group_name": "Porter-Mckinney",
     "sources": [
         {
             "metrics": [
@@ -30,130 +30,155 @@ class checkJsonFile:
         self.data = data
 
     # Loops through the keys in the dictionaries
-    def check_dict_keys(self):
-        found_req = True
-        found_opt = True
+    def checkDictKeys(self):
+        check_outer = self.verifyOuter()
+        check_source = self.verifySources()
+        check_metric = self.verfiyMetrics()
+        check_required = self.verifyRequired()
 
-        val = None
-        layer = None
+        if (
+            not check_outer
+            or not check_source
+            or not check_metric
+            or not check_required
+        ):
+            return False
+        return True
 
-        # Outer Layer
-        for key in data.keys():
-            layer = "outer"
-            check_req = self.required_fields(key, layer)
-            check_opt = self.optional_fields(key, layer)
+    # Checks the outer layer dictionary
+    def verifyOuter(self):
+        correct = None
+        layer = 1
 
-            # Checks if required or optional key exist
-            if not check_req:
-                if not check_opt:
-                    found_req = False
-                    found_opt = False
-                    val = key
-                    break
-                else:
-                    found_opt = True
-                    val = key
-                    break
+        for outer in data.keys():
+            check_req = self.requiredFields(outer, layer)
+            check_opt = self.optionalFields(outer, layer)
+            correct = self.supportedType(check_req, check_opt)
 
-        # Source Layer
-        if found_req:
-            for i in data["sources"]:
-                for key in i.keys():
-                    layer = "source"
+        return correct
+
+    # Checks the sources layer dictionary
+    def verifySources(self):
+        correct = None
+        layer = 2
+
+        for source in data["sources"]:
+            for key in source.keys():
+                check_req = self.requiredFields(key, layer)
+                check_opt = self.optionalFields(key, layer)
+                correct = self.supportedType(check_req, check_opt)
+
+        return correct
+
+    # Checks the metrics layer dictionary
+    def verfiyMetrics(self):
+        correct = None
+        layer = 3
+
+        for source in data["sources"]:
+            for metric in source["metrics"]:
+                for key in metric.keys():
                     check_req = self.required_fields(key, layer)
                     check_opt = self.optional_fields(key, layer)
+                    correct = self.supportedType(check_req, check_opt)
 
-                    # Checks if required or optional key exist
-                    if not check_req:
-                        if not check_opt:
-                            found_req = False
-                            found_opt = False
-                            val = key
-                            break
-                        else:
-                            found_opt = True
-                            val = key
-                            break
+        return correct
 
-        # Metric Layer
-        if found_req:
-            for i in data["sources"]:
-                for j in i["metrics"]:
-                    for key in j.keys():
-                        layer = "metric"
-                        check_req = self.required_fields(key, layer)
-                        check_opt = self.optional_fields(key, layer)
+    # Returns the result of whether the key is a supported value
+    def supportedType(self, check_req, check_opt):
+        if not check_opt:
+            if not check_req:
+                return False
+        return True
 
-                        # Checks if required or optional key exist
-                        if not check_req:
-                            if not check_opt:
-                                found_req = False
-                                found_opt = False
-                                val = key
-                                break
-                            else:
-                                found_opt = True
-                                val = key
-                                break
-        # Prints whether the field is missing or not supported
-        if not found_req and found_opt:
-            print("Missing required field:", val)
-        elif not found_opt or not found_req:
-            print("Not a supported key", val)
+    # Checks to see if all the required fields are provided
+    def verifyRequired(self):
+        req_outer_layer = ["group_name", "sources"]
+        req_source_layer = ["metrics", "name"]
+        req_metric_layer = ["data_type", "name"]
+
+        # Checks the outer layer dictionary
+        for val in req_outer_layer:
+            if not val in data:
+                print("Missing required field:", val)
+                return False
+
+        # Checks the sources layer dictionary
+        for val in req_source_layer:
+            for source in data["sources"]:
+                if not val in source:
+                    print("Missing required field:", val)
+
+        # Checks the metrics layer dictionary
+        for val in req_metric_layer:
+            for source in data["sources"]:
+                for metric in source["metrics"]:
+                    if not val in metric:
+                        print("Missing required field:", val)
+                        return False
+
+        return True
 
     # Checks to see if the val is one of the required fields
-    def required_fields(self, val, layer):
+    def requiredFields(self, val, layer):
         req_outer_layer = ["group_name", "sources"]
         req_source_layer = ["metrics", "name"]
         req_metric_layer = ["data_type", "name"]
 
         found = False
 
-        if layer == "outer":
-            for i in req_outer_layer:
-                if val in i:
+        # Outer layer
+        if layer == 1:
+            for key in req_outer_layer:
+                if val == key:
                     found = True
 
-        if layer == "source":
-            for i in req_source_layer:
-                if val in i:
+        # Source layer
+        if layer == 2:
+            for key in req_source_layer:
+                if val == key:
                     found = True
 
-        if layer == "metric":
-            for i in req_metric_layer:
-                if val in i:
+        # Metric layer
+        if layer == 3:
+            for key in req_metric_layer:
+                if val == key:
                     found = True
 
         return found
 
     # Checks to see if the val is one of the optional fields
-    def optional_fields(self, val, layer):
+    def optionalFields(self, val, layer):
         opt_outer_layer = ["classification", "location"]
         opt_source_layer = ["tz_info"]
         opt_metric_layer = ["asc", "units"]
 
         found = False
 
-        if layer == "outer":
-            for i in opt_outer_layer:
-                if val in i:
+        # Outer layer
+        if layer == 1:
+            for key in opt_outer_layer:
+                if val == key:
                     found = True
 
-        if layer == "source":
-            for i in opt_source_layer:
-                if val in i:
+        # Source layer
+        if layer == 2:
+            for key in opt_source_layer:
+                if val == key:
                     found = True
 
-        if layer == "metric":
-            for i in opt_metric_layer:
-                if val in i:
+        # Metric layer
+        if layer == 3:
+            for key in opt_metric_layer:
+                if val == key:
                     found = True
 
         return found
 
 
 checker = checkJsonFile(data)
-checker.check_dict_keys()
+print(checker.checkDictKeys())
+
 
 # Outermost Layer
 # group_name    string      required        Title of the group

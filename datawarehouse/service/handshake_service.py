@@ -34,7 +34,7 @@ class HandshakeService(BaseService):
     def prepareTables(self, properties):
         uids = self._insertMetadata(properties)
         # the creating of the tables will go here.
-        self._createTables(properties)
+        self._createTables(uids)
         return uids
 
     """
@@ -164,15 +164,12 @@ class HandshakeService(BaseService):
 
         # Navigate through `sources` part of the dictionary.
         for src in data["sources"]:
-            table = sqlalchemy.Table(
-                "{}{}".format(src["name"], str(table_num)),
-                self._metadata_obj,
-            )
+            table = sqlalchemy.Table(src["source_uid"], self._metadata_obj)
 
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
             muid = 1
             for metric in src["metrics"]:
-                col_name = "{} (MUID: {})".format(metric["name"], muid)
+                col_name = metric["metric_uid"]
                 col_type = self._getType(metric["data_type"])
                 table.append_column(sqlalchemy.Column(col_name, col_type))
                 muid += 1
@@ -189,19 +186,19 @@ class HandshakeService(BaseService):
     """
 
     @classmethod
-    def _getType(self, type):
+    def _getType(self, type_):
         # Horrible code, but this will be refactored later.
         # This is just for testing for now. I am leaving the
         # string comparisons also for testing purposes.
-        if type == "integer" or (type(type) == type(0) and type == 1):
+        if type_ == "integer" or (type(type_) == type(0) and type_ == 1):
             return sqlalchemy.Integer
-        elif type == "float" or (type(type) == type(0.0) and type == 2):
+        elif type_ == "float" or (type(type_) == type(0.0) and type_ == 2):
             return sqlalchemy.Float
-        elif type == "bool" or (type(type) == type(False) and type == 3):
+        elif type_ == "bool" or (type(type_) == type(False) and type_ == 3):
             return sqlalchemy.Boolean
-        elif type == "string" or (type(type) == type("data") and type == 4):
+        elif type_ == "string" or (type(type_) == type("data") and type_ == 4):
             return sqlalchemy.String
-        assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type)
+        assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type_)
 
     """
     closeConnection(self) -> void.

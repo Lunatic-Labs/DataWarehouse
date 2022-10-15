@@ -4,7 +4,7 @@ from datawarehouse.service import BaseService
 from datetime import datetime
 from datawarehouse.config.db import config as db
 
-from datawarehouse.model import group, source, metric
+from datawarehouse.model import metric
 
 
 class InsertDataService(BaseService):
@@ -35,9 +35,7 @@ class InsertDataService(BaseService):
     #         self.data = self.data.rstrip()
 
     def _verifyInformation(self, data):
-        metric = sqlalchemy.Table(
-            "metric", self._metadata_obj, autoload=True, autoload_with=self._engine
-        )
+
         for metric_ in data["metrics"]:
             stmt = sqlalchemy.select([metric]).where(
                 metric.columns.metric_uid == metric_["metric_uid"]

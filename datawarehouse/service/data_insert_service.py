@@ -8,10 +8,6 @@ from datawarehouse.model import metric
 
 
 class InsertDataService(BaseService):
-    _engine = db.engine
-    _connection = _engine.connect()
-    _metadata_obj = db.meta
-
     # def __init__(self, url, source_uid=None, metric_uid=None, data=None):
     #     """
     #     TODO: Connect using our existing connections.
@@ -34,21 +30,21 @@ class InsertDataService(BaseService):
     #         self._metric_uid = self._metric_uid.rstrip()
     #         self.data = self.data.rstrip()
 
-    def _verifyInformation(self, data):
-
+    def verifyInformation(self, data):
+        if not self._checkUUIDFormat(data["source_uid"]):
+            return "source_uid is not a valid uuid4", 400
         for metric_ in data["metrics"]:
+            if not self._checkUUIDFormat(metric_["metric_uid"]):
+                return "metric_uid is not a valid uuid4", 400
             stmt = sqlalchemy.select([metric]).where(
-                metric.columns.metric_uid == metric_["metric_uid"]
+                metric.c.metric_uid == metric_["metric_uid"]
             )
-            result = self._connection.execute(stmt).fetchone()
-
+            result = self._connection.execute(stmt).first()
             if result is None:
-                raise Exception("metric_uid was not found.")
+                return "metric_uid was not found.", 400
 
             if result["source_uid"] != data["source_uid"]:
-                raise Exception(
-                    "source_uid does not match the source_uid in the database."
-                )
+                return "source_uid does not match the source_uid in the database.", 400
 
         print(f"Verified information for {result['name']}")
 
@@ -60,7 +56,6 @@ class InsertDataService(BaseService):
         # ).fetchone()[0]
 
     def addData(self, data):
-        self._verifyInformation(data)
 
         # self._metadata_obj.reflect(self._engine)
         """
@@ -74,14 +69,7 @@ class InsertDataService(BaseService):
         added to the database, however no special action is taken if a table
         in this ``MetaData`` no longer exists in the database.
         """
-
-        table = sqlalchemy.Table(
-            data["source_uid"],
-            self._metadata_obj,
-            autoload=True,
-            autoload_with=self._engine,
-            keep_existing=True,
-        )
+        table = self._get_table(data["source_uid"])
         values = {}
         for _metric in data["metrics"]:
             values[_metric["metric_uid"]] = _metric["value"]

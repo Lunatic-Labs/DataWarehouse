@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
-    <title>Login Form</title> 
-    <link rel="stylesheet" href="../html_handshake/templates/handshake.css">
+    <title>Login Form</title>
+    <link rel="stylesheet" type="text/css" href="handshake.css" />
 </head>
+
 <body>
-    <form action="{{url_for("api.hs_bp.hs_func")}}" method="post">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" placeholder="name">
-    <label for="number">Number:</label>
-    <input type="text" id="number" name="number" placeholder="number">
-    <button type="submit">Submit</button>
+    {% for i in [1, 2, 3, 4] %}
+    <p>{{i}}</p>
+    {% endfor %}
+    <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" placeholder="name">
+        <label for="number">Number:</label>
+        <input type="text" id="number" name="number" placeholder="number">
+        <button type="submit">Submit</button>
 </body>
+
 </html>

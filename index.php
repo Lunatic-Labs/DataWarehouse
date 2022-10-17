@@ -51,6 +51,18 @@
             echo "<br>";
         }
     }
+
+    // Go through the database and make a list of all of the tablenames that are not metric, source, or group.
+    $tables= "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name != 'metric' AND table_name != 'source' AND table_name != 'group';";
+    // print the tablenames
+    echo "<h3>----------------------------------CREATED TABLES----------------------------------</h3>" . "<br>";
+    $result = pg_query($conn, $tables);
+    $resultCheck = pg_num_rows($result);
+    if ($resultCheck > 0) {
+      while ($row = pg_fetch_assoc($result)) {
+        echo $row['table_name'] . "<br>";
+      }
+    }
   ?>
 </body>
 </html>

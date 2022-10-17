@@ -11,5 +11,8 @@ class Config:
 class DevelopmentConfig(Config):
     # env vars here
     DATABASE_URL = os.environ.get("DATABASE_URL")
-
     DEBUG = True
+
+
+class TestingConfig(Config):
+    DATABASE_URL = os.environ.get("TESTING_DATABASE_URL")

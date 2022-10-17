@@ -171,7 +171,13 @@ class HandshakeService(BaseService):
                 col_name = metric["metric_uid"]
                 col_type = self._getType(metric["data_type"])
                 table.append_column(sqlalchemy.Column(col_name, col_type))
-            table.append_column(sqlalchemy.Column("timestamp", sqlalchemy.DateTime))
+            table.append_column(
+                sqlalchemy.Column(
+                    "timestamp",
+                    sqlalchemy.DateTime,
+                    index=True,
+                )
+            )
 
             # Insert the table into the database.
             table.create(self._engine)

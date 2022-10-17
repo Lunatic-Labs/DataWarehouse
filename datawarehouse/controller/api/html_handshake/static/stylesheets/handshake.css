@@ -1,0 +1,10 @@
+form {
+    margin: auto;
+    align-items: center;
+}
+
+input,
+select {
+    display: block;
+    width: 300px;
+}

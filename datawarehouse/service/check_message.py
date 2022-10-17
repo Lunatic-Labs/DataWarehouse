@@ -78,8 +78,8 @@ class checkJsonFile:
         for source in data["sources"]:
             for metric in source["metrics"]:
                 for key in metric.keys():
-                    check_req = self.required_fields(key, layer)
-                    check_opt = self.optional_fields(key, layer)
+                    check_req = self.requiredFields(key, layer)
+                    check_opt = self.optionalFields(key, layer)
                     correct = self.supportedType(check_req, check_opt)
 
         return correct
@@ -108,6 +108,7 @@ class checkJsonFile:
             for source in data["sources"]:
                 if not val in source:
                     print("Missing required field:", val)
+                    return False
 
         # Checks the metrics layer dictionary
         for val in req_metric_layer:

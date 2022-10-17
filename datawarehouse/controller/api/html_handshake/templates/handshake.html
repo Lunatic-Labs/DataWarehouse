@@ -11,12 +11,37 @@
     {% for i in [1, 2, 3, 4] %}
     <p>{{i}}</p>
     {% endfor %}
+    <h1>Data Storage Handshake Information</h1>
     <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" placeholder="name">
-        <label for="number">Number:</label>
-        <input type="text" id="number" name="number" placeholder="number">
-        <button type="submit">Submit</button>
+        <label for="class">Classification:</label>
+        <input type="text" id="class" name="class" placeholder="testing, production, etc.">
+
+        <label for="group_name">Group Name:</label>
+        <input type="text" id="group_name" name="group_name" placeholder="your organization's name">
+
+        <h2>Source #1</h2>
+        <label for="src_name">Source Name:</label>
+        <input type="text" id="src_name" name="src_name" placeholder="speedometer, thermometer, etc.">
+
+        <h3>Metrics for Source #1</h3>
+
+        <label for="datatype">Datatype:</label>
+        <input type="text" id="datatype" name="datatype"
+            placeholder="integer, floating-point, string of characters, etc.">
+
+        <label for="units">Units:</label>
+        <input type="text" id="units" name="units" placeholder="degrees, inches, miles, etc.">
+
+        <label for="asc">Sort data in ascending order?</label>
+        <select id="asc" name="cars">
+            <option value="true">Yes, sort the data in ascending order</option>
+            <option value="false">No, do not sort the data in ascending order</option>
+            <button type="submit">Submit</button>
+        </select>
+        <p>Note: If you choose not to sort the data in ascending order, the data will be
+            sorted by descending order by default.
+        </p>
+    </form>
 </body>
 
 </html>

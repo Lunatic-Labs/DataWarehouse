@@ -25,6 +25,9 @@
 
         <h3>Metrics for Source #1</h3>
 
+        <label for="metric_name">Metric Name:</label>
+        <input type="text" id="metric_name" name="metric_name" placeholder="x-coordinate, y-coordinate, etc.">
+
         <label for="datatype">Datatype:</label>
         <input type="text" id="datatype" name="datatype"
             placeholder="integer, floating-point, string of characters, etc.">
@@ -33,14 +36,14 @@
         <input type="text" id="units" name="units" placeholder="degrees, inches, miles, etc.">
 
         <label for="asc">Sort data in ascending order?</label>
-        <select id="asc" name="cars">
+        <select id="asc" name="asc">
             <option value="true">Yes, sort the data in ascending order</option>
             <option value="false">No, do not sort the data in ascending order</option>
-            <button type="submit">Submit</button>
         </select>
         <p>Note: If you choose not to sort the data in ascending order, the data will be
             sorted by descending order by default.
         </p>
+        <button type="submit">Submit</button>
     </form>
 </body>
 

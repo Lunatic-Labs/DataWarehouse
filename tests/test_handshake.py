@@ -72,9 +72,10 @@ def check_required_fields(required_fields, db_row, checked_object):
 
 
 def check_optional_fields(optional_fields, db_row, checked_object):
+    valid = True
     for optional_field in optional_fields:
         db_column = getattr(db_row, optional_field)
-        if db_column:
+        if db_column and optional_field in checked_object:
             assert db_column == checked_object[optional_field]
 
 
@@ -136,7 +137,7 @@ def check_handshake_response(response, session):
 def test_handshake(test_app, handshake_json, session):
     response = test_app.post("/api/prepare/", json=handshake_json)
     assert response.status_code == 200
-    check_handshake_response(response)
+    check_handshake_response(response, session)
 
 
 @pytest.mark.parametrize(
@@ -173,4 +174,4 @@ def test_missing_optional_fields(
 
     response = test_app.post("/api/prepare/", json=handshake_json)
 
-    check_handshake_response(response)
+    check_handshake_response(response, session)

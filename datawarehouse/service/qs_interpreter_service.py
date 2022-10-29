@@ -29,7 +29,7 @@ class QueryStringInterpreter:
 
 
 
-qs = "https://www.urmom.com/thermometertable?timestamp__lt=10pm10/30/22"
+qs = "https://www.datawarehouse.com/thermometertable?timestamp__lt=10pm10/30/22"
 q = QueryStringInterpreter(qs)
 q.parseUrl()
 q.parseQuery()

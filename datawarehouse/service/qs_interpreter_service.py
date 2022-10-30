@@ -11,6 +11,19 @@ class QueryStringInterpreter:
         "and": "AND",
     }
 
+    # Short term solution.
+    ILLEGALS = [
+        "DROP",
+        "DELETE",
+        "UPDATE",
+        "INSERT",
+        "CREATE",
+        "ALTER",
+        "TRUNCATE",
+        "REPLACE",
+        "GRANT",
+    ]
+
     def __init__(self, url, db_url, query=None, tablename=None):
         self.url = url
         self.tablename = tablename
@@ -80,14 +93,14 @@ class QueryStringInterpreter:
             )
 
     def verifyTokenIntegrity(self):
+        # This is here just in case.
+        for stok in self.stmnt_tokens:
+            for illegal in self.ILLEGALS:
+                if illegal in stok.upper():
+                    raise Exception(
+                        f"Token `{stok}` contains illegal operation `{illegal}`."
+                    )
         # TODO: Verify each token to make sure they are valid.
-        table = sqlalchemy.Table(
-            self.tablename,
-            sqlalchemy.MetaData(),
-            autoload=True,
-            autoload_with=self.engine,
-        )
-        pass
 
     def generateStatement(self):
         if self.stmnt_tokens_sz == 0:
@@ -108,10 +121,11 @@ class QueryStringInterpreter:
         print(f"STATEMENT: {self.statement}")
 
 
-url = "https://www.datawarehouse.com/7ef719c9-59da-4262-a94b-6d9bb17c2f11?feet__lt=3__and=people__gt=2"
+url = "https://www.datawarehouse.com/7ef719c9-59da-4262-a94b-6d9bb17c2f11?drop__lt=3__and=people__gt=2"
 dburl = "postgresql://postgres:postgres@localhost:5432/data_warehouse"
 q = QueryStringInterpreter(url, dburl)
 q.parseUrl()
 q.createTokens()
+q.verifyTokenIntegrity()
 q.generateStatement()
 q.dump()

@@ -7,7 +7,7 @@ hs_bp = Blueprint(
     url_prefix="/handshake",
     static_url_path="",
     template_folder="templates",
-    static_folder="static/stylesheets",
+    static_folder="static",
 )
 
 

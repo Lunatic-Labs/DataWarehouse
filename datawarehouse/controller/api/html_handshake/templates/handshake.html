@@ -13,18 +13,24 @@
     {% endfor %}
     <h1>Data Storage Handshake Information</h1>
     <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
-        <label for="class">Classification:</label>
-        <input type="text" id="class" name="class" required="required" placeholder="testing, production, etc.">
 
         <label for="group_name">Group Name:</label>
-        <input type="text" id="group_name" name="group_name" placeholder="your organization's name">
+        <input type="text" id="group_name" name="group_name" required="required" placeholder="your organization's name">
+
+        <label for="class">Classification:</label>
+        <input type="text" id="class" name="class" placeholder="testing, production, etc.">
+
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" placeholder="Enter location of group here">
 
         <h2>Source #1</h2>
         <label for="src_name">Source Name:</label>
-        <input type="text" id="src_name" name="src_name" placeholder="speedometer, thermometer, GPS, etc.">
+        <input type="text" id="src_name" name="src_name" required="required"
+            placeholder="speedometer, thermometer, GPS, etc.">
 
         <label for="tz_info">Timezone:</label>
         <select name="tz_info" id="tz_info">
+            <option disabled selected value>Please select...</option>
             <option value="-10:00">(GMT -10:00) Hawaii</option>
             <option value="-09:00">(GMT -9:00) Alaska</option>
             <option value="-08:00">(GMT -8:00) Pacific Time</option>
@@ -37,11 +43,12 @@
         <h3>Metrics for Source #1</h3>
 
         <label for="metric_name">Metric Name:</label>
-        <input type="text" id="metric_name" name="metric_name"
-            placeholder="x-coordinate, y-coordinate, speed, height, etc.">
+        <input type="text" id="metric_name" name="metric_name" required="required"
+            placeholder="x-coordinate, temperature, speed, height, etc.">
 
-        <label for="datatype">Datatype:</label>
-        <select id="datatype" name="datatype">
+        <label for="datatype">Datatype of measured data:</label>
+        <select id="datatype" name="datatype" required="required">
+            <option disabled selected value>Please select...</option>
             <option value=1>Whole number (integer)</option>
             <option value=2>Characters (string)</option>
             <option value=3>Decimal number (float)</option>
@@ -54,12 +61,10 @@
 
         <label for="asc">Sort data in ascending order?</label>
         <select id="asc" name="asc">
-            <option value="true">Yes, sort the data in ascending order</option>
+            <option value="true">Yes, sort the data in ascending order (default)</option>
             <option value="false">No, do not sort the data in ascending order</option>
         </select>
-        <p>Note: If you choose not to sort the data in ascending order, the data will be
-            sorted by descending order by default.
-        </p>
+
         <button type="submit">Submit</button>
     </form>
 </body>

@@ -84,13 +84,15 @@ class QueryStringInterpreter:
                 sbuf += self.query[i]
             i += 1
 
-        self.stmnt_tokens.append(sbuf)
-        self.stmnt_tokens_sz += 1
+        if self.stmnt_tokens_sz > 0:
+            self.stmnt_tokens.append(sbuf)
+            self.stmnt_tokens_sz += 1
 
-        if self.op_tokens_sz != self.stmnt_tokens_sz - 1:  # Currently broken.
-            raise Exception(
-                f"UNIMPLEMENTED: Operations size `{self.op_tokens_sz}` and statements size `{self.stmnt_tokens_sz}` are imbalanced. Operations size should be statements size - 1"
-            )
+        # Currently broken.
+        # if self.op_tokens_sz != self.stmnt_tokens_sz - 1:
+        #     raise Exception(
+        #         f"UNIMPLEMENTED: Operations size `{self.op_tokens_sz}` and statements size `{self.stmnt_tokens_sz}` are imbalanced. Operations size should be statements size - 1"
+        #     )
 
     def verifyTokenIntegrity(self):
         # This is here just in case.
@@ -104,15 +106,17 @@ class QueryStringInterpreter:
 
     def generateStatement(self):
         if self.stmnt_tokens_sz == 0:
-            raise Exception("No tokens have been generated. Run _.createTokens().")
-        self.statement += (
-            f'SELECT * FROM "{self.tablename}" WHERE {self.stmnt_tokens[0]}'
-        )
-        for i in range(1, self.stmnt_tokens_sz):
-            self.statement += f" {self.op_tokens[i - 1]} {self.stmnt_tokens[i]}"
+            self.statement = f"SELECT * FROM {self.tablename}"
+        else:
+            self.statement += (
+                f'SELECT * FROM "{self.tablename}" WHERE {self.stmnt_tokens[0]}'
+            )
+            for i in range(1, self.stmnt_tokens_sz):
+                self.statement += f" {self.op_tokens[i - 1]} {self.stmnt_tokens[i]}"
         return self.statement
 
     def dump(self):
+        print("--- QS Interpreter Dump: ---")
         print(f"URL: {self.url}")
         print(f"TABLENAME: {self.tablename}")
         print(f"QUERY: {self.query}")
@@ -121,7 +125,8 @@ class QueryStringInterpreter:
         print(f"STATEMENT: {self.statement}")
 
 
-url = "https://www.datawarehouse.com/7ef719c9-59da-4262-a94b-6d9bb17c2f11?drop__lt=3__and=people__gt=2"
+url = "https://www.datawarehouse.com/7ef719c9-59da-4262-a94b-6d9bb17c2f11?feet__lt=3__and=people__gt=2"
+# url = "https://www.datawarehouse.com/7ef719c9-59da-4262-a94b-6d9bb17c2f11?"
 dburl = "postgresql://postgres:postgres@localhost:5432/data_warehouse"
 q = QueryStringInterpreter(url, dburl)
 q.parseUrl()

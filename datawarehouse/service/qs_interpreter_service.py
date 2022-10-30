@@ -1,11 +1,12 @@
 class QueryStringInterpreter:
     # To add a new operation, put it here.
     OPERATIONS = {
-        "lt": '<',
-        "gt": '>',
-        "eq": '=',
+        "lt": "<",
+        "gt": ">",
+        "eq": "=",
         "limit": "lim",
     }
+
     def __init__(self, url, query, tablename):
         self.url = url
         self.tablename = tablename
@@ -17,16 +18,13 @@ class QueryStringInterpreter:
         slash_idx = -1
         question_idx = -1
         for i in range(0, len(self.url)):
-            if self.url[i] == '/':
-                slash_idx = i;
-            if self.url[i] == '?':
+            if self.url[i] == "/":
+                slash_idx = i
+            if self.url[i] == "?":
                 question_idx = i
                 break
-        self.tablename = self.url[slash_idx+1:question_idx]
-        self.query = self.url[question_idx+1:]
-
-    def _check(self):
-        return not (self.query == None and self.tablename == None)
+        self.tablename = self.url[slash_idx + 1 : question_idx]
+        self.query = self.url[question_idx + 1 :]
 
     def _determineOperation(self, op):
         for key in self.OPERATIONS:
@@ -35,8 +33,8 @@ class QueryStringInterpreter:
         return f"Operation `{op}` not implemented."
 
     def createTokens(self):
-        if not self._check():
-            raise Exception("No query or tablename has been given. Run _.parseUrl().")
+        if self.query == None:
+            raise Exception("No query has been given. Run _.parseUrl().")
         sz = len(self.query)
         i = 0
         j = 0
@@ -44,10 +42,10 @@ class QueryStringInterpreter:
         opbuf = ""
         sbuf = ""
         while i < sz:
-            if i < sz-1 and self.query[i] == '_' and self.query[i+1] == '_':
+            if i < sz - 1 and self.query[i] == "_" and self.query[i + 1] == "_":
                 # i + 2 to put us past the `__`
                 j = i + 2
-                while self.query[j] != '=':
+                while self.query[j] != "=":
                     opbuf += self.query[j]
                     j += 1
                 self.op_tokens.append(self._determineOperation(opbuf))
@@ -60,23 +58,27 @@ class QueryStringInterpreter:
                 sbuf += self.query[i]
             i += 1
         self.stmnt_tokens.append(sbuf)
+        op_sz = len(self.op_tokens)
+        stmnt_sz = len(self.stmnt_tokens)
+        if op_sz != stmnt_sz - 1:
+            raise Exception(
+                f"Operations size `{op_sz}` and statements size `{stmnt_sz}` are imbalanced. Operations size should be statements size - 1"
+            )
 
     def generateStatement(self):
-        if not self._check():
-            raise Exception("No query or tablename has been given. Run _.parseUrl().")
+        # TODO
+        pass
 
     def dump(self):
         print(f"URL: {self.url}")
         print(f"TABLENAME: {self.tablename}")
         print(f"QUERY: {self.query}")
-        print(f"OP_TOKENS: {self.op_tokens}")
         print(f"STMT_TOKENS: {self.stmnt_tokens}")
+        print(f"OP_TOKENS: {self.op_tokens}")
+
 
 qs = "https://www.datawarehouse.com/thermometertable?timestamp__lt=10pm10/30/22"
 q = QueryStringInterpreter(qs, None, None)
 q.parseUrl()
 q.createTokens()
 q.dump()
-
-
-

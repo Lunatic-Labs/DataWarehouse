@@ -14,7 +14,7 @@
     <h1>Data Storage Handshake Information</h1>
     <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
         <label for="class">Classification:</label>
-        <input type="text" id="class" name="class" placeholder="testing, production, etc.">
+        <input type="text" id="class" name="class" required="required" placeholder="testing, production, etc.">
 
         <label for="group_name">Group Name:</label>
         <input type="text" id="group_name" name="group_name" placeholder="your organization's name">
@@ -22,6 +22,17 @@
         <h2>Source #1</h2>
         <label for="src_name">Source Name:</label>
         <input type="text" id="src_name" name="src_name" placeholder="speedometer, thermometer, GPS, etc.">
+
+        <label for="tz_info">Timezone:</label>
+        <select name="tz_info" id="tz_info">
+            <option value="-10:00">(GMT -10:00) Hawaii</option>
+            <option value="-09:00">(GMT -9:00) Alaska</option>
+            <option value="-08:00">(GMT -8:00) Pacific Time</option>
+            <option value="-07:00">(GMT -7:00) Mountain Time</option>
+            <option value="-06:00">(GMT -6:00) Central Time</option>
+            <option value="-05:00">(GMT -5:00) Eastern Time</option>
+            <option value="-04:00">(GMT -4:00) Atlantic Time</option>
+        </select>
 
         <h3>Metrics for Source #1</h3>
 

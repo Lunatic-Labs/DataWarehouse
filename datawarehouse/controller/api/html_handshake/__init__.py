@@ -18,6 +18,7 @@ def hs_func():
         data["class"] = request.form.get("class")
         data["group_name"] = request.form.get("group_name")
         data["src_name"] = request.form.get("src_name")
+        data["tz_info"] = request.form.get("tz_info")
         data["metric_name"] = request.form.get("metric_name")
         # print(request.form.getlist("metric_name"))
         data["datatype"] = int(request.form.get("datatype"))

@@ -21,16 +21,22 @@
 
         <h2>Source #1</h2>
         <label for="src_name">Source Name:</label>
-        <input type="text" id="src_name" name="src_name" placeholder="speedometer, thermometer, etc.">
+        <input type="text" id="src_name" name="src_name" placeholder="speedometer, thermometer, GPS, etc.">
 
         <h3>Metrics for Source #1</h3>
 
         <label for="metric_name">Metric Name:</label>
-        <input type="text" id="metric_name" name="metric_name" placeholder="x-coordinate, y-coordinate, etc.">
+        <input type="text" id="metric_name" name="metric_name"
+            placeholder="x-coordinate, y-coordinate, speed, height, etc.">
 
         <label for="datatype">Datatype:</label>
-        <input type="text" id="datatype" name="datatype"
-            placeholder="integer, floating-point, string of characters, etc.">
+        <select id="datatype" name="datatype">
+            <option value=1>Whole number (integer)</option>
+            <option value=2>Characters (string)</option>
+            <option value=3>Decimal number (float)</option>
+            <option value=4>Yes/No (boolean)</option>
+            <option value=5>Date and time (datetime)</option>
+        </select>
 
         <label for="units">Units:</label>
         <input type="text" id="units" name="units" placeholder="degrees, inches, miles, etc.">

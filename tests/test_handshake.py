@@ -1,15 +1,21 @@
 import json
-from tkinter import W
 import pytest
 from . import test_app
 from faker import Faker
+from uuid import uuid4
 
 
-@pytest.fixture
+def pytest_configure():
+    pytest.cleanup_uids = dict(group=[], source=[], metric=[])
+
+
+@pytest.fixture(scope="function")
 def handshake_json():
     fake = Faker()
+    unique_group_name = str(uuid4())
+    pytest.cleanup_uids["group"].append(unique_group_name)
     json = {
-        "group_name": fake.company(),
+        "group_name": unique_group_name,
         "classification": "testing",
         "sources": [],
         "location": fake.pystr(),
@@ -21,10 +27,10 @@ def handshake_json():
 
 def generate_source():
     fake = Faker()
+    source_name = str(uuid4())
+    pytest.cleanup_uids["source"].append(source_name)
     dic = {
-        "name": fake.random_choices(
-            elements=("thermometer", "Spedometer", "barometer"), length=1
-        )[0],
+        "name": source_name,
         "metrics": [],
         "tz_info": fake.pystr(),
     }
@@ -36,8 +42,10 @@ def generate_source():
 
 def generate_metric():
     fake = Faker()
+    metric_name = str(uuid4())
+    pytest.cleanup_uids["metric"].append(metric_name)
     return {
-        "name": fake.pystr(),
+        "name": metric_name,
         "units": fake.random_choices(
             elements=(
                 "feet",
@@ -58,11 +66,31 @@ def generate_metric():
     }
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def session():
+    pytest_configure()
     from datawarehouse.config.db import config
+    from datawarehouse.util import get_table, drop_table
+    from sqlalchemy import delete
+    from sqlalchemy.orm import Session
 
-    return config.session
+    yield config.session
+
+    from datawarehouse import model
+
+    with Session(config.engine) as s:
+        s.begin()
+        for layer in ["metric", "source", "group"]:
+            table = getattr(model, layer)
+            if layer == "source":
+                for uid in pytest.cleanup_uids[layer]:
+                    source_uid = (
+                        s.query(table.c.source_uid).where(table.c.name == uid).scalar()
+                    )
+                    drop_table(source_uid)
+            stmt = delete(table).where(table.c.name.in_(pytest.cleanup_uids[layer]))
+            s.execute(stmt)
+        s.commit()
 
 
 def check_required_fields(required_fields, db_row, checked_object):
@@ -143,7 +171,9 @@ def test_handshake(test_app, handshake_json, session):
 @pytest.mark.parametrize(
     "layer, missing_field", parametrize_missing_fields(required_fields)
 )
-def test_missing_required_fields(test_app, handshake_json, layer, missing_field):
+def test_missing_required_fields(
+    test_app, session, handshake_json, layer, missing_field
+):
     json_payload = handshake_json
     for l in layer:
         json_payload = json_payload[l]
@@ -164,7 +194,7 @@ def test_missing_required_fields(test_app, handshake_json, layer, missing_field)
     "layer, missing_field", parametrize_missing_fields(optional_fields)
 )
 def test_missing_optional_fields(
-    test_app, handshake_json, session, layer, missing_field
+    test_app, session, handshake_json, layer, missing_field
 ):
     json_payload = handshake_json
     for l in layer:

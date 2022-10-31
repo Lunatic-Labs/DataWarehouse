@@ -1,3 +1,4 @@
+from email import message
 import json
 import sqlalchemy
 import psycopg2
@@ -18,20 +19,33 @@ conn = get_connection()
 
 curr = conn.cursor()
 
-curr.execute('SELECT * FROM "group";' )
+curr.execute('SELECT * FROM "group";')
 
 data = curr.fetchall()
-
-for row in data:
-    print(row)
-
-conn.close()
 
 # if conn:
 #     print("Connection to the PostgreSQL established successfully.")
 # else:
 #     print("Connection to the PostgreSQL encountered an error.")
 
-# class checkTable:
-#     def __init__(self, data):
-#         self.data = data
+class checkTable:
+    def __init__(self, json_message):
+        self.json_message = json_message
+
+    def checkColumns(self):
+        check_group = self.verifyGroup()
+        check_source = self.verifySource()
+        check_metric = self.verifyMetric()
+
+
+    def verifyGroup(self):
+        pass
+
+    def verifySource(self):
+        pass
+
+    def verifyMetric(self):
+        pass
+
+
+conn.close()

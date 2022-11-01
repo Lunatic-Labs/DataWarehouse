@@ -37,8 +37,8 @@ class checkTable:
         curr.execute('SELECT * FROM "group";')
         data = curr.fetchall()
 
-        for i in self.json_message.values():
-            print(i)
+        for val in self.json_message.values():
+            print(val)
 
         # for row in data:
         #     for val in row:
@@ -49,6 +49,10 @@ class checkTable:
         curr.execute('SELECT * FROM "source";')
         data = curr.fetchall()
         
+        for row in self.json_message["sources"]:
+            for val in row.values():
+                print(val)
+        
         # for row in data:
         #     for val in row:
         #         print(val)
@@ -58,6 +62,11 @@ class checkTable:
         curr.execute('SELECT * FROM "metric";')
         data = curr.fetchall()
         
+        for source in self.json_message["sources"]:
+            for metric in source["metrics"]:
+                for val in metric.values():
+                    print(val)
+
         # for row in data:
         #     for val in row:
         #         print(val)

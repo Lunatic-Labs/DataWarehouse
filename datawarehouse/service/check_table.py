@@ -3,6 +3,9 @@ import json
 import sqlalchemy
 import psycopg2
 
+with open("sample.json") as f:
+    json_file = json.load(f)
+
 def get_connection():
     try:
         return psycopg2.connect(
@@ -19,18 +22,10 @@ conn = get_connection()
 
 curr = conn.cursor()
 
-curr.execute('SELECT * FROM "group";')
-
-data = curr.fetchall()
-
-# if conn:
-#     print("Connection to the PostgreSQL established successfully.")
-# else:
-#     print("Connection to the PostgreSQL encountered an error.")
-
 class checkTable:
     def __init__(self, json_message):
         self.json_message = json_message
+
 
     def checkColumns(self):
         check_group = self.verifyGroup()
@@ -39,13 +34,37 @@ class checkTable:
 
 
     def verifyGroup(self):
-        pass
+        curr.execute('SELECT * FROM "group";')
+        data = curr.fetchall()
+
+        for i in self.json_message.values():
+            print(i)
+
+        # for row in data:
+        #     for val in row:
+        #         print(val)
+        
 
     def verifySource(self):
-        pass
+        curr.execute('SELECT * FROM "source";')
+        data = curr.fetchall()
+        
+        # for row in data:
+        #     for val in row:
+        #         print(val)
+    
 
     def verifyMetric(self):
-        pass
+        curr.execute('SELECT * FROM "metric";')
+        data = curr.fetchall()
+        
+        # for row in data:
+        #     for val in row:
+        #         print(val)
 
 
+checker = checkTable(json_file)
+print(checker.checkColumns())
+
+curr.close()
 conn.close()

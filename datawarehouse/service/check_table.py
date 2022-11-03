@@ -29,8 +29,10 @@ class checkTable:
 
     def checkColumns(self):
         check_group = self.verifyGroup()
-        check_source = self.verifySource()
-        check_metric = self.verifyMetric()
+        # check_source = self.verifySource()
+        # check_metric = self.verifyMetric()
+
+        return check_group
 
 
     def verifyGroup(self):
@@ -38,20 +40,28 @@ class checkTable:
         data = curr.fetchall()
 
         for val in self.json_message.values():
-            print(val)
+            for row in data:
+                print(val)
+                if val not in row:
+                    return False
+
+        # for val in self.json_message.values():
+        #     print(val)
 
         # for row in data:
         #     for val in row:
         #         print(val)
+
+        return True
         
 
     def verifySource(self):
         curr.execute('SELECT * FROM "source";')
         data = curr.fetchall()
         
-        for row in self.json_message["sources"]:
-            for val in row.values():
-                print(val)
+        # for row in self.json_message["sources"]:
+        #     for val in row.values():
+        #         print(val)
         
         # for row in data:
         #     for val in row:
@@ -62,10 +72,10 @@ class checkTable:
         curr.execute('SELECT * FROM "metric";')
         data = curr.fetchall()
         
-        for source in self.json_message["sources"]:
-            for metric in source["metrics"]:
-                for val in metric.values():
-                    print(val)
+        # for source in self.json_message["sources"]:
+        #     for metric in source["metrics"]:
+        #         for val in metric.values():
+        #             print(val)
 
         # for row in data:
         #     for val in row:

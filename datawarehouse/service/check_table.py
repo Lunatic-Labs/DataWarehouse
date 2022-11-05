@@ -6,20 +6,9 @@ import psycopg2
 with open("sample.json") as f:
     json_file = json.load(f)
 
-def get_connection():
-    try:
-        return psycopg2.connect(
-            database="test",
-            user="postgres",
-            password="pre",
-            host="127.0.0.1",
-            port=5432,
-        )
-    except:
-        return False
-
-conn = get_connection()
-
+conn = psycopg2.connect(
+    database="test", user='postgres', password='pre', host="127.0.0.1", port='5432'
+)
 curr = conn.cursor()
 
 class checkTable:
@@ -28,28 +17,29 @@ class checkTable:
 
 
     def checkColumns(self):
-        # check_group = self.verifyGroup()
-        # check_source = self.verifySource()
+        check_group = self.verifyGroup()
+        check_source = self.verifySource()
         check_metric = self.verifyMetric()
 
-        return check_metric
+        if(
+            not check_group 
+            or not check_source
+            or not check_metric
+        ):
+            return False
+        return True
 
 
     def verifyGroup(self):
         curr.execute('SELECT * FROM "group";')
         data = curr.fetchall()
 
-        for val in self.json_message.values():
+        for key, value in self.json_message.items():
             for row in data:
-                if val not in row:
+                if key == 'sources':
+                    continue
+                elif value not in row:
                     return False
-
-        # for val in self.json_message.values():
-        #     print(val)
-
-        # for row in data:
-        #     for val in row:
-        #         print(val)
 
         return True
         
@@ -57,42 +47,31 @@ class checkTable:
     def verifySource(self):
         curr.execute('SELECT * FROM "source";')
         data = curr.fetchall()
-        
-        # for source in self.json_message["sources"]:
-        #     for val in source.values():
-        #         print(val)
 
         for source in self.json_message["sources"]:
-            for val in source.values():
+            for key, value in source.items():
                 for row in data:
-                    if val not in row:
+                    if key == 'metrics':
+                        continue
+                    elif value not in row:
                         return False
-        
-        # for row in data:
-        #     for val in row:
-        #         print(val)
+
+        return True
     
 
     def verifyMetric(self):
         curr.execute('SELECT * FROM "metric";')
         data = curr.fetchall()
         
-        # for source in self.json_message["sources"]:
-        #     for metric in source["metrics"]:
-        #         for val in metric.values():
-        #             print(val)
-
         for source in self.json_message["sources"]:
             for metric in source["metrics"]:
-                for val in metric.values():
-                    print(val)
+                for value in metric.values():
                     for row in data:
-                        if val not in row:
+                        if value not in row:
                             return False
+        
+        return True
 
-        # for row in data:
-        #     for val in row:
-        #         print(val)
 
 
 checker = checkTable(json_file)

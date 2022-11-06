@@ -44,7 +44,7 @@
                 </select>
             </div>
 
-            <div id="source0_metric0">
+            <div id="source0_metric0" class="0">
                 <h3>Metrics for Source #1</h3>
 
                 <label for="metric_name">Metric Name:</label>
@@ -69,7 +69,7 @@
                     <option value="true">Yes, sort the data in ascending order (default)</option>
                     <option value="false">No, do not sort the data in ascending order</option>
                 </select>
-
+                <button type="button" id="add_metric" onclick="addMetric()">Add another metric...</button>
             </div>
 
 
@@ -78,8 +78,7 @@
 
 
     </form>
-    <button type="button" id="button2" onclick="addSource()">Flap</button>
-    <button id="button" onclick="duplicate('source')">Add another source...</button>
+    <button type="button" id="add_src" onclick="addSource()">Add another source...</button>
     <button id="button" onclick="duplicate('metric')">Add another metric...</button>
     <button type="submit">Submit</button>
 </body>

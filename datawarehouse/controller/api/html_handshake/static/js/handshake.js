@@ -1,72 +1,43 @@
-//var i = 0;
-//var original = document.getElementById('duplicater' + i);
-//var clone = original.cloneNode(true); // "deep" clone
-//function duplicate(id) {
-//    clone.id = id + ++i;
-//    original.parentNode.appendChild(clone);
-//}
-
 var source = 0;
 var metric = 0;
-
-function duplicate(id) {
-    var original = document.getElementById(id + i);
-    var clone = original.cloneNode(true); // "deep" clone
-
-    //clone.querySelector('.src_name').value = '';
-    //clone.querySelector('.metric_name').value = '';
-    //clone.querySelector('.units').value = '';
-
-    clone.id = id + ++i; // there can only be one element with an ID
-    clone.onclick = duplicate; // event handlers are not cloned
-    original.parentNode.appendChild(clone);
-}
+var num_metrics = [];
 
 function addSource() {
-    var overview = document.getElementById("source" + source + "_overview");
-    var overview_clone = overview.cloneNode(true);
+    var overview = document.getElementById("source" + num_metrics.length + "_overview");
 
-    var first_metric = document.getElementById("source" + source + "_metric0");
-    var first_metric_clone = first_metric.cloneNode(true);
+    var first_metric = document.getElementById("source" + num_metrics.length + "_metric0");
+
+    num_metrics.push(1);
 
     source += 1;
+    metric = 0;
     var new_source = document.createElement('div');
-    new_source.id = 'source' + source;
+    new_source.id = 'source' + num_metrics.length;
     document.getElementsByTagName('form')[0].appendChild(new_source);
 
     var new_source_overview = document.createElement('div');
-    new_source_overview.id = "source" + source + "_overview";
+    new_source_overview.id = "source" + num_metrics.length + "_overview";
 
     var new_first_metric = document.createElement('div');
-    new_first_metric.id = "source" + source + "_metric0";
-
-    //new_source.appendChild(new_source_overview);
-    //new_source.appendChild(new_first_metric);
+    new_first_metric.id = "source" + num_metrics.length + "_metric0";
+    new_first_metric.className = num_metrics.length;
 
     new_source_overview.innerHTML = overview.innerHTML;
     new_first_metric.innerHTML = first_metric.innerHTML;
 
     new_source.appendChild(new_source_overview);
     new_source.appendChild(new_first_metric);
-
-    return false;
 }
 
-function flap() {
-    // Your existing code unmodified...
-    var iDiv = document.createElement('div');
-    iDiv.id = 'block';
-    iDiv.className = 'block';
-    document.getElementsByTagName('form')[0].appendChild(iDiv);
+function addMetric() {
+    var last_metric = document.getElementById("source" + source + "_metric" + metric);
+    var current_src = document.getElementById("source" + source);
 
-    // Now create and append to iDiv
-    var innerDiv = document.createElement('div');
-    innerDiv.className = 'block-2';
+    metric += 1;
+    var new_metric = document.createElement("div");
+    new_metric.id = "source" + source + "_metric" + metric;
 
-    var innerDiv2 = document.createElement('div');
-    innerDiv2.className = 'block-3';
+    new_metric.innerHTML = last_metric.innerHTML;
 
-    // The variable iDiv is still good... Just append to it.
-    iDiv.appendChild(innerDiv);
-    iDiv.appendChild(innerDiv2);
+    current_src.appendChild(new_metric);
 }

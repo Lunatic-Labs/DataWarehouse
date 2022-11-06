@@ -35,16 +35,21 @@ function addSource() {
     document.getElementsByTagName('form')[0].appendChild(new_source);
 
     var new_source_overview = document.createElement('div');
-    new_source_overview.className = "source" + source + "_overview";
+    new_source_overview.id = "source" + source + "_overview";
 
     var new_first_metric = document.createElement('div');
-    new_first_metric.className = "source" + source + "_metric0";
+    new_first_metric.id = "source" + source + "_metric0";
+
+    //new_source.appendChild(new_source_overview);
+    //new_source.appendChild(new_first_metric);
 
     new_source_overview.innerHTML = overview.innerHTML;
     new_first_metric.innerHTML = first_metric.innerHTML;
 
     new_source.appendChild(new_source_overview);
     new_source.appendChild(new_first_metric);
+
+    return false;
 }
 
 function flap() {

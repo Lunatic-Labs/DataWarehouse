@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <title>Login Form</title>
     <link rel="stylesheet" type="text/css" href="stylesheets/handshake.css" />
-    <script src="js/handshake.js"></script>
+    <script src="js/handshake.js" defer></script>
 </head>
 
 <body>
@@ -69,19 +69,19 @@
                     <option value="true">Yes, sort the data in ascending order (default)</option>
                     <option value="false">No, do not sort the data in ascending order</option>
                 </select>
+
             </div>
 
 
-            <button id="button" onclick="duplicate('metric')">Add another metric...</button>
+
         </div>
 
 
     </form>
-
+    <button type="button" id="button2" onclick="addSource()">Flap</button>
     <button id="button" onclick="duplicate('source')">Add another source...</button>
+    <button id="button" onclick="duplicate('metric')">Add another metric...</button>
     <button type="submit">Submit</button>
-
-    <button id="button2" onclick="addSource()">Flap</button>
 </body>
 
 </html>

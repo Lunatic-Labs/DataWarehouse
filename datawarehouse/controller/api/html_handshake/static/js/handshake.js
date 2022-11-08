@@ -1,43 +1,56 @@
-var source = 0;
-var metric = 0;
-var num_metrics = [];
+//keeps track of the number of metrics belonging to each source (# sources = array length)
+var num_metrics = [1];
 
 function addSource() {
-    var overview = document.getElementById("source" + num_metrics.length + "_overview");
+    //each new source must have at least 2 elements--overview info and 
+    //info for at least one metric. Copy these two items from the most recent
+    //source added
+    var overview = document.getElementById((num_metrics.length - 1) + ".overview");
+    var first_metric = document.getElementById((num_metrics.length - 1) + ".0");
 
-    var first_metric = document.getElementById("source" + num_metrics.length + "_metric0");
-
+    //extend array to account for new source
     num_metrics.push(1);
 
-    source += 1;
-    metric = 0;
+    //create new source div that will hold the divs for the overview/metric info
     var new_source = document.createElement('div');
-    new_source.id = 'source' + num_metrics.length;
+    new_source.id = 'source' + (num_metrics.length - 1);
     document.getElementsByTagName('form')[0].appendChild(new_source);
 
+    //create div for overview info for new source, and put it inside the new source div
     var new_source_overview = document.createElement('div');
-    new_source_overview.id = "source" + num_metrics.length + "_overview";
-
-    var new_first_metric = document.createElement('div');
-    new_first_metric.id = "source" + num_metrics.length + "_metric0";
-    new_first_metric.className = num_metrics.length;
-
+    new_source_overview.id = (num_metrics.length - 1) + ".overview";
     new_source_overview.innerHTML = overview.innerHTML;
-    new_first_metric.innerHTML = first_metric.innerHTML;
-
     new_source.appendChild(new_source_overview);
+
+    //the same thing as above, but for the div containing info about the first new metric
+    var new_first_metric = document.createElement('div');
+    new_first_metric.id = (num_metrics.length - 1) + ".0";
+    new_first_metric.innerHTML = first_metric.innerHTML;
     new_source.appendChild(new_first_metric);
 }
 
-function addMetric() {
-    var last_metric = document.getElementById("source" + source + "_metric" + metric);
-    var current_src = document.getElementById("source" + source);
+function addMetric(element) {
+    //get name of div ID where the button was clicked
+    var ID_name = element.parentNode.id;
 
-    metric += 1;
+    //get index of source for new div, so we can add it to the right section on the page
+    var index = ID_name.indexOf(".");
+    var src = parseInt(ID_name.slice(0, index));
+    var metric = parseInt(ID_name.slice(index + 1));
+    //window.alert(metric);
+
+    //get contents of a previous metric info div to copy into the new one (acts as a template)
+    var last_metric = document.getElementById("0.0");
+
+    //create new metric info div; give it the correct ID name and copy the fields from the template
     var new_metric = document.createElement("div");
-    new_metric.id = "source" + source + "_metric" + metric;
-
+    new_metric.id = src + "." + num_metrics[src];
     new_metric.innerHTML = last_metric.innerHTML;
 
-    current_src.appendChild(new_metric);
+    //append the div to the correct source
+    var current_src = document.getElementById("source" + src);
+    current_src.appendChild(new_metric)
+
+    //the current source now has one more metric
+    num_metrics[src] += 1;
 }

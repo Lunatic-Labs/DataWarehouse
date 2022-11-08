@@ -9,9 +9,6 @@
 </head>
 
 <body>
-    {% for i in [1, 2, 3, 4] %}
-    <p>{{i}}</p>
-    {% endfor %}
     <h1>Data Storage Handshake Information</h1>
     <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
 
@@ -25,7 +22,7 @@
         <input type="text" id="location" name="location" placeholder="Enter location of group here">
 
         <div id="source0">
-            <div id="source0_overview">
+            <div id="0.overview">
                 <h2>Source #1</h2>
                 <label for="src_name">Source Name:</label>
                 <input type="text" id="src_name" name="src_name" required="required"
@@ -44,7 +41,7 @@
                 </select>
             </div>
 
-            <div id="source0_metric0" class="0">
+            <div id="0.0">
                 <h3>Metrics for Source #1</h3>
 
                 <label for="metric_name">Metric Name:</label>
@@ -69,17 +66,11 @@
                     <option value="true">Yes, sort the data in ascending order (default)</option>
                     <option value="false">No, do not sort the data in ascending order</option>
                 </select>
-                <button type="button" id="add_metric" onclick="addMetric()">Add another metric...</button>
+                <button type="button" id="add_metric" onclick="addMetric(this)">Add another metric...</button>
             </div>
-
-
-
         </div>
-
-
     </form>
     <button type="button" id="add_src" onclick="addSource()">Add another source...</button>
-    <button id="button" onclick="duplicate('metric')">Add another metric...</button>
     <button type="submit">Submit</button>
 </body>
 

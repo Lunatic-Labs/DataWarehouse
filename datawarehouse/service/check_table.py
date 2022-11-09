@@ -1,19 +1,23 @@
 from email import message
 import json
-import sqlalchemy
 import psycopg2
+from datawarehouse.config.config import config as db
+from sqlalchemy import select, and_
 
 with open("sample.json") as f:
     json_file = json.load(f)
 
-conn = psycopg2.connect(
-    database="test", user='postgres', password='pre', host="127.0.0.1", port='5432'
-)
-curr = conn.cursor()
+# conn = psycopg2.connect(
+#     database="test", user='postgres', password='pre', host="127.0.0.1", port='5432'
+# )
+# curr = conn.cursor()
+
+curr = db.session()
 
 class checkTable:
-    def __init__(self, json_message):
+    def __init__(self, json_message, curr):
         self.json_message = json_message
+        self.curr = curr
 
 
     def checkColumns(self):
@@ -31,7 +35,7 @@ class checkTable:
 
 
     def verifyGroup(self):
-        curr.execute('SELECT * FROM "group";')
+        self.curr.execute('SELECT * FROM "group";')
         data = curr.fetchall()
 
         for key, value in self.json_message.items():
@@ -45,7 +49,7 @@ class checkTable:
         
 
     def verifySource(self):
-        curr.execute('SELECT * FROM "source";')
+        self.curr.execute('SELECT * FROM "source";')
         data = curr.fetchall()
 
         for source in self.json_message["sources"]:
@@ -60,7 +64,7 @@ class checkTable:
     
 
     def verifyMetric(self):
-        curr.execute('SELECT * FROM "metric";')
+        self.curr.execute('SELECT * FROM "metric";')
         data = curr.fetchall()
         
         for source in self.json_message["sources"]:
@@ -74,8 +78,8 @@ class checkTable:
 
 
 
-checker = checkTable(json_file)
+checker = checkTable(json_file, curr)
 print(checker.checkColumns())
 
 curr.close()
-conn.close()
+# conn.close()

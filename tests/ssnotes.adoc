@@ -1,0 +1,22 @@
+= SS notes
+
+.Types of Development
+****
+Green Field:: 
+* New 
+* Freedom
+* Uncharted Territory
+* High 
+** *High* Risk
+** *$$$* - innovative, more expensive
+** *more* fun
+
+Brown Field::
+* Existing Work/standards
+* Constraints
+* Well Understood (by the industry)
+* Low 
+** *Low* Risk
+** *$* lower risk, less innovation, less expensive. 
+** *less* fun
+****

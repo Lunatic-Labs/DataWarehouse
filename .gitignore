@@ -4,3 +4,7 @@
 \.env
 \.pyc
 \.DS_Store
+\.eggs
+build/
+.eggs/
+dist/

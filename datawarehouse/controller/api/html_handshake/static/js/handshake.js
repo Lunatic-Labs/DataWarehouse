@@ -30,14 +30,13 @@ function addSource() {
 }
 
 function addMetric(element) {
+    //window.alert(element.id);
     //get name of div ID where the button was clicked
     var ID_name = element.parentNode.id;
 
     //get index of source for new div, so we can add it to the right section on the page
     var index = ID_name.indexOf(".");
     var src = parseInt(ID_name.slice(0, index));
-    var metric = parseInt(ID_name.slice(index + 1));
-    //window.alert(metric);
 
     //get contents of a previous metric info div to copy into the new one (acts as a template)
     var last_metric = document.getElementById("0.0");
@@ -53,4 +52,42 @@ function addMetric(element) {
 
     //the current source now has one more metric
     num_metrics[src] += 1;
+}
+
+function removeMetric(element) {
+    //get name of div ID where the button was clicked
+    var ID_name = element.parentNode.id;
+
+    //get name of outer div ("source0"--for later)
+    var div_name = document.getElementById(element.parentNode.parentNode.id);
+
+    //get index of source for new div, so we can add it to the right section on the page
+    var index = ID_name.indexOf(".");
+    var src = parseInt(ID_name.slice(0, index));
+
+    //if only one metric defined, don't allow user to delete metric...
+    if (num_metrics[src] == 1) {
+        window.alert("At least one metric must be defined for each source");
+        return;
+    }
+
+    //...if more than one metric defined, let user delete the source...
+    var div_id = document.getElementById(ID_name);
+    div_id.remove();
+    num_metrics[src] -= 1;
+
+    //...then update the inner div names so there are no gaps (ex. _.0 is 1st, _.1 is 2nd, etc.)
+    //get list of inner div names; 1st element is "_.overview"
+    var metric_names = div_name.getElementsByTagName('div');
+    var i, j;
+    for (i = 1, j = 0; i < metric_names.length; i++, j++)
+        metric_names[i].id = `${src}.${j}`;
+}
+
+function getSource(element) {
+    var ID_name = element.parentNode.id;
+    var index = ID_name.indexOf(".");
+    window.alert(parseInt(ID_name.slice(0, index)))
+    //return parseInt(ID_name.slice(0, index));
+    document.write(parseInt(ID_name.slice(0, index)));
 }

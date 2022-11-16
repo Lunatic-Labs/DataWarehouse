@@ -2,27 +2,27 @@ import json
 from typing import Optional
 
 # Would use if opening a JSON file
-# with open("sample.json") as f:
-#     data = json.load(f)
+with open("sample.json") as f:
+    data = json.load(f)
 
 # Dictionary for testing
-data = {
-    "group_name": "Data Dogs",
-    "classification": "testing",
-    "sources": [
-        {
-            "metrics": [
-                {
-                    "asc": False,
-                    "data_type": "integer",
-                    "name": "WeueKSwmjcGsYVThpwuf",
-                    "units": "students",
-                }
-            ],
-            "name": "Spedometer",
-        }
-    ],
-}
+# data = {
+#     "group_name": "Data Dogs",
+#     "classification": "testing",
+#     "sources": [
+#         {
+#             "metrics": [
+#                 {
+#                     "asc": False,
+#                     "data_type": "integer",
+#                     "name": "WeueKSwmjcGsYVThpwuf",
+#                     "units": "students",
+#                 }
+#             ],
+#             "name": "Spedometer",
+#         }
+#     ],
+# }
 
 
 class checkJsonFile:

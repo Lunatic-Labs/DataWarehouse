@@ -1,8 +1,9 @@
-from email import message
 import json
 import psycopg2
-from datawarehouse.config.config import config as db
-from sqlalchemy import select, and_
+from datawarehouse.config.db import config as db
+
+# from sqlalchemy import select, and_
+
 
 with open("sample.json") as f:
     json_file = json.load(f)
@@ -12,70 +13,62 @@ with open("sample.json") as f:
 # )
 # curr = conn.cursor()
 
-curr = db.session()
+curr = db.session
+
 
 class checkTable:
     def __init__(self, json_message, curr):
         self.json_message = json_message
         self.curr = curr
 
-
     def checkColumns(self):
         check_group = self.verifyGroup()
         check_source = self.verifySource()
         check_metric = self.verifyMetric()
 
-        if(
-            not check_group 
-            or not check_source
-            or not check_metric
-        ):
+        if not check_group or not check_source or not check_metric:
             return False
         return True
 
-
     def verifyGroup(self):
-        self.curr.execute('SELECT * FROM "group";')
-        data = curr.fetchall()
+        qry = self.curr.execute('SELECT * FROM "group";')
+        data = qry.all()
 
         for key, value in self.json_message.items():
             for row in data:
-                if key == 'sources':
+                if key == "sources":
                     continue
                 elif value not in row:
                     return False
 
         return True
-        
 
     def verifySource(self):
-        self.curr.execute('SELECT * FROM "source";')
-        data = curr.fetchall()
+        qry = self.curr.execute('SELECT * FROM "source";')
+        data = qry.all()
 
         for source in self.json_message["sources"]:
             for key, value in source.items():
                 for row in data:
-                    if key == 'metrics':
+                    if key == "metrics":
                         continue
                     elif value not in row:
                         return False
 
         return True
-    
 
     def verifyMetric(self):
-        self.curr.execute('SELECT * FROM "metric";')
-        data = curr.fetchall()
-        
+        qry = self.curr.execute('SELECT * FROM "metric";')
+        data = qry.all()
+
         for source in self.json_message["sources"]:
             for metric in source["metrics"]:
                 for value in metric.values():
                     for row in data:
                         if value not in row:
                             return False
-        
-        return True
 
+        return True
 
 
 checker = checkTable(json_file, curr)

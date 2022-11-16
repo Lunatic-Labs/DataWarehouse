@@ -84,10 +84,30 @@ function removeMetric(element) {
         metric_names[i].id = `${src}.${j}`;
 }
 
-function getSource(element) {
-    var ID_name = element.parentNode.id;
-    var index = ID_name.indexOf(".");
-    window.alert(parseInt(ID_name.slice(0, index)))
-    //return parseInt(ID_name.slice(0, index));
-    document.write(parseInt(ID_name.slice(0, index)));
-}
+//get list of html elements to change to "Source #1", "Source #2", etc.
+var src_titles = document.getElementsByTagName("h2");
+
+//get list of html elements to change to the following format:
+//"Metric #1 for Source #1"
+var metric_titles = document.getElementsByTagName("h3");
+
+document.addEventListener("click", function () {
+    //change source headers to reflect correct enumeration
+    for (var i = 0; i < src_titles.length; i++) {
+        src_titles[i].innerHTML = `Source #${i + 1}`;
+    }
+
+    //change metric headers to reflect correct enumeration
+    for (var i = 0; i < metric_titles.length; i++) {
+        //get ID of div ("0.0", "1.2", etc.)
+        var ID_name = metric_titles[i].parentNode.id;
+
+        //find source and metric number of ID_name by slicing the string
+        var index = ID_name.indexOf(".");
+        var src = parseInt(ID_name.slice(0, index));
+        var metric = parseInt(ID_name.slice(index + 1));
+
+        //change the heading
+        metric_titles[i].innerHTML = `Metric #${metric + 1} for Source #${src + 1}`;
+    }
+});

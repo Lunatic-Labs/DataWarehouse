@@ -98,6 +98,48 @@ function removeMetric(element) {
         metric_names[i].id = `${indices[0]}.${j}`;
 }
 
+function removeSource(element) {
+    var outer_div = element.parentNode.parentNode; //"source0" div
+
+    //if only one source has been defined, do not allow the user to delete it...
+    if (num_metrics.length == 1) {
+        window.alert("At least one source must be defined on the form")
+        return;
+    }
+
+    //...otherwise, delete it
+    outer_div.remove();
+
+    //get source number for later
+    var src_index = outer_div.id.indexOf("e");
+    var src_num = parseInt(outer_div.id.slice(src_index + 1));
+
+    //iterate over both inner and outer div names, and change them to reflect 
+    //the correct enumeration
+    var metric_names = document.getElementsByTagName("div");
+    for (var i = 0, j = -1; i < metric_names.length; i++) {
+        // "source0" 
+        if (metric_names[i].id.indexOf("source") != -1) {
+            j += 1;
+            metric_names[i].id = "source" + j;
+        }
+        // "0.overview"
+        else if (metric_names[i].id.indexOf("overview") != -1) {
+            metric_names[i].id = j + ".overview";
+        }
+        // "0.0", "0.1", etc.
+        else {
+            var suffix_index = metric_names[i].id.indexOf(".");
+            var suffix = metric_names[i].id.slice(suffix_index);
+            metric_names[i].id = j + suffix;
+        }
+    }
+
+    //pop correct element from array so that another source can be added while 
+    //keeping the correct enumeration intact
+    num_metrics.splice(src_num, 1);
+}
+
 //get list of html elements to change to "Source #1", "Source #2", etc.
 var src_titles = document.getElementsByTagName("h2");
 

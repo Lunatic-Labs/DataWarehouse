@@ -11,6 +11,7 @@ requirements = [
     "flask-sqlalchemy",
     "sqlalchemy",
     "python-dotenv",
+    "stringcase",
 ]
 
 if "PyPy" in sys.version:

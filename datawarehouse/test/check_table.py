@@ -2,7 +2,7 @@ import json
 import psycopg2
 from datawarehouse.config.db import config as db
 
-# from sqlalchemy import select, and_
+# File isn't currently being used. Checks the wrong json file.
 
 
 with open("sample.json") as f:

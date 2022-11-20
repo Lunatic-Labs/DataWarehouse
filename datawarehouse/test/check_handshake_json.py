@@ -5,25 +5,6 @@ from typing import Optional
 with open("sample.json") as f:
     data = json.load(f)
 
-# Dictionary for testing
-# data = {
-#     "group_name": "Data Dogs",
-#     "classification": "testing",
-#     "sources": [
-#         {
-#             "metrics": [
-#                 {
-#                     "asc": False,
-#                     "data_type": "integer",
-#                     "name": "WeueKSwmjcGsYVThpwuf",
-#                     "units": "students",
-#                 }
-#             ],
-#             "name": "Spedometer",
-#         }
-#     ],
-# }
-
 
 class checkJsonFile:
     def __init__(self, data):

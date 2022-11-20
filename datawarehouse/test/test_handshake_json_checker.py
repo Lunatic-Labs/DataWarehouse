@@ -1,6 +1,36 @@
-def func(x):
-    return x + 1
+from check_handshake_json import checkJsonFile
+import json
+
+# Dictionary for testing
+# data = {
+#     "group_name": "Data Dogs",
+#     "classification": "testing",
+#     "sources": [
+#         {
+#             "metrics": [
+#                 {
+#                     "asc": False,
+#                     "data_type": "integer",
+#                     "name": "WeueKSwmjcGsYVThpwuf",
+#                     "units": "students",
+#                 }
+#             ],
+#             "name": "Spedometer",
+#         }
+#     ],
+# }
+
+with open("sample.json") as f:
+    data = json.load(f)
 
 
-def test_answer():
-    assert func(3) == 5
+def test_verifyRequired():
+    pass
+
+
+def test_optionalFields():
+    pass
+
+
+def test_requiredFields():
+    pass

@@ -1,11 +1,12 @@
 from datawarehouse.model import group, source, metric
 from datawarehouse.config.db import config as db
-
-
+from sqlalchemy import and_
+from sqlalchemy.dialects.postgresql import UUID
 from datawarehouse.service import BaseService
 parents = dict(source="group", metric="source")
 class MetaService(BaseService):
     session = db.session 
+
     def _get_meta(self, name, uid, parent_uid = None):
         uid_name = name+"_uid"
         table = self._get_table(name)
@@ -20,10 +21,10 @@ class MetaService(BaseService):
     # follows this format:
     # {"group_uid": <group_uid>, 
     #       "sources": [
-    #           "source_uid": <source_uid>,
+    #           {"source_uid": <source_uid>,
     #           "metrics": [
-    #               "metric_uid":<metric_uid>, ...
-    #           ], ...
+    #               {"metric_uid":<metric_uid>}, ...
+    #           ]}, ...
     #       ]
     # }
     def get_metadata(self, uids: dict):
@@ -55,4 +56,12 @@ class MetaService(BaseService):
 
     def get_name_from_uid(self, level, uid): 
         table = self._get_table(level)
-        return self.session.query(table).where(getattr(table.c, level+"_uid") == uid).first()
+        return self.session.query(table.c.name).where(getattr(table.c, level+"_uid") == uid).scalar()
+
+
+    #this function breaks on the query line. Not sure why. must investigate.
+    def ensure_group_ownership_of_source(self, group_uid, source_uid):
+        # table = self._get_table("source")
+        # row = self.session.query(table).where(table.c.source_uid == source_uid).first()
+        # return row is not None 
+        return True

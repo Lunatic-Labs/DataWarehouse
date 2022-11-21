@@ -1,0 +1,81 @@
+= Data Warehouse Query Documentation
+
+== Querying your Data
+
+=== Querying a specific source
+
+Endpoint:: `/api/query/<your group id>/<desired source id>/`
+
+Requirements:: You must provide a valid pair of `group_uid` and `source_uid` in the url. 
+
+By default, this will return the 1000 most recently entered rows in this table, by timestamp. To specify how many rows you would like, use query string parameter `limit=<desired row number>`. 
+
+.Example 
+[source, url]
+----
+/api/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX/YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY?limit=10
+----
+
+Specifying your query::
+In order to filter your data, you must provide a query string. This query string can be highly customized to finetune your query. 
+
+Supported Operators::
+[cols="1,1,2,2"]  
+|=== 
+|Operation |Query String | Effect | Example
+
+|`<`
+|`__<`
+|Less than operation
+|`?temperature__<=98.6`
+
+
+|`=<`
+|`__<<`
+|Less than or equal to
+|`?temperature__<<=98.6`
+
+|`=`
+|`__eq`
+|Equals this value
+|`?temperature__eq=98.6`
+
+|`!=`
+|`__!`
+|Not equals this value
+|`?temperature__!=98.6`
+
+|`>`
+|`__>`
+|Greater than operation
+|`?temperature__>=98.6`
+
+|`>=`
+|`__>>`
+|Greater than or equal to
+|`?temperature__>>=98.6`
+
+|`like`
+|`__like`
+|String is like this value
+|`?model_name__like=Civic`
+
+|`contains`
+|`__contains`
+|String contains this value as substring
+|`?model_name__contains=Civic`
+
+|`contained by`
+|`__contained_by`
+|String is contained by this value
+|`?car_brand__contained_by=2012%20Honda%20Civic`
+|=== 
+
+These operators can be applied in combination to further filter your query results. 
+
+.Example of combined query operators
+`?limit=100&temperature__>100&volume__<30`
+The above query string will filter the table where temperature is greater than 100, and the volume is less than 30, and will return only 100 rows at most. 
+
+To query a column, you can pass in a url_encoded column name, or the metric_uid you were given upon the handshake request. 
+The metric_uid/column_name that you pass in must be a column or metric of the source.q

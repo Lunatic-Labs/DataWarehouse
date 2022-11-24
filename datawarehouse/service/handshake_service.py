@@ -3,6 +3,7 @@ This service handles the logic to take in a new group/source and store the data 
 """
 import sqlalchemy
 from datawarehouse.config.db import config as db
+from datawarehouse.dwinterface import InformalHandshakeService
 from datawarehouse.model import group, source, metric
 from datawarehouse.service import BaseService
 
@@ -14,7 +15,7 @@ def uuid4():
     return str(_uuid4())
 
 
-class HandshakeService(BaseService):
+class HandshakeService(BaseService, InformalHandshakeService):
     session = db.session
     _engine = db.engine
     _metadata_obj = db.meta

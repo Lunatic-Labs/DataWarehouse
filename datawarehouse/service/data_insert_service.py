@@ -1,4 +1,5 @@
 import sqlalchemy
+from datawarehouse.dwinterface import InformalInsertDataService
 from datawarehouse.service import BaseService
 
 from datetime import datetime
@@ -7,7 +8,7 @@ from datawarehouse.config.db import config as db
 from datawarehouse.model import metric
 
 
-class InsertDataService(BaseService):
+class InsertDataService(BaseService, InformalInsertDataService):
     def verifyInformation(self, data):
         """
         verifyInformation(self, data) -> Err

@@ -96,7 +96,7 @@ class QueryService(BaseService):
         metric_names = [k.name for k in metric_names]
         return metric_names
 
-    # replaces a user-defined query criteria with the valid metric uid for the source. 
+    # replaces a user-defined query criteria with the valid metric uid for the source.
     def _col_name_to_uid(self, request, col_name):
         source_uid = request.view_args["source_uid"]
         metric_table = self._get_table("metric")
@@ -117,7 +117,6 @@ class QueryService(BaseService):
 
         else:
             return col_name + "__" + op
-
 
     """ Takes in a request object, and the SA table object
     finds which of the request query string parameters apply to this particular table, ignores the rest
@@ -152,7 +151,7 @@ class QueryService(BaseService):
             else:
                 return v
 
-        # change user-defined column names into the metric uid for querying if necessary. 
+        # change user-defined column names into the metric uid for querying if necessary.
         return {
             as_default(
                 self._col_name_to_uid(request, k)

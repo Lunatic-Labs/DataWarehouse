@@ -12,6 +12,7 @@ requirements = [
     "sqlalchemy",
     "python-dotenv",
     "stringcase",
+    "black",
 ]
 
 if "PyPy" in sys.version:

@@ -6,7 +6,7 @@ from datawarehouse.service.meta_service import MetaService
 query_data_bp = Blueprint("query_data_bp", __name__, url_prefix="/query")
 
 
-@query_data_bp.route("/<group_uid>/<source_uid>/")
+@query_data_bp.route("/<group_uid>/<source_uid>/", methods=["GET"])
 def index(group_uid, source_uid):
     service = QueryService()
     meta_service = MetaService()

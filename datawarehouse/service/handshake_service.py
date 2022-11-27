@@ -5,8 +5,8 @@ import sqlalchemy
 from datawarehouse.config.db import config as db
 from datawarehouse.model import group, source, metric
 from datawarehouse.service import BaseService
-
 from sqlalchemy import func, insert
+from sqlalchemy.dialects.postgresql import UUID
 from uuid import uuid4 as _uuid4
 
 # this is just to avoid repetative use of str() func on all the uuids...
@@ -175,6 +175,15 @@ class HandshakeService(BaseService):
                 sqlalchemy.Column(
                     "timestamp",
                     sqlalchemy.DateTime,
+                    index=True,
+                )
+            )
+            table.append_column(
+                sqlalchemy.Column(
+                    "pk",
+                    UUID(as_uuid=True),
+                    primary_key=True,
+                    default=uuid4,
                     index=True,
                 )
             )

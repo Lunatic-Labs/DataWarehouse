@@ -24,7 +24,10 @@ op_to_sa_op = {
 }
 op_to_array_op = {"contains": "@>", "contained_by": "<@"}
 
-excluded_cols = ["timestamp"]
+excluded_cols = ["pk", "timestamp"]
+
+
+""" function takes in column, operation, and values and returns a sqlalchemy clause for the operation"""
 
 
 def clause_from_str(col, op, values):
@@ -41,9 +44,15 @@ def clause_from_str(col, op, values):
     return combinator(*[col_op(value) for value in values])
 
 
+""" function takes in column, operation, and values and returns a sqlalchemy clause for the operation"""
+
+
 def clause_from_default(col, op, values):
     col_op = getattr(col, op_to_sa_op[op])
     return or_(*[col_op(value) for value in values])
+
+
+""" function takes in column, operation, and values and returns a sqlalchemy clause for the operation"""
 
 
 def clause_from_list(col, op, values):
@@ -61,6 +70,13 @@ def clause_from_list(col, op, values):
 
 clause_map = {str: clause_from_str, list: clause_from_list}
 
+"""
+Class for querying the database through a request object.
+USAGE:
+the query() method is the only public method. takes in a table to query from, a request object, and a limit for rows desired. 
+builds a query object with the given filtering criteria, and returns the results.
+"""
+
 
 class QueryService(BaseService):
 
@@ -73,16 +89,16 @@ class QueryService(BaseService):
     def query(self, table_name, request, limit=1000):
         table = self._get_table(table_name)  # get the table object
         qry = self.session.query(table)  # create a base query object on the table
-        criteria = self._criteria_for_request(
+        criteria = self._criteriaForRequest(
             request=request, table=table
         )  # extract the query criteria from the request query string
 
-        qry = self._apply_kw_criteria(qry, table, **criteria)
+        qry = self._applyKWCriteria(qry, table, **criteria)
 
         rslt = qry.order_by(table.c.timestamp.desc()).limit(limit).all()
         return rslt
 
-    def _get_table_user_defined_col_names(self, table):
+    def _getTableUserDefinedColNames(self, table):
         metric = self._get_table("metric")
         metric_names = (
             self.session.query(metric.c.name)
@@ -97,10 +113,10 @@ class QueryService(BaseService):
         return metric_names
 
     # replaces a user-defined query criteria with the valid metric uid for the source.
-    def _col_name_to_uid(self, request, col_name):
+    def _colNameToUID(self, request, col_name):
         source_uid = request.view_args["source_uid"]
         metric_table = self._get_table("metric")
-        col_name, op = self._parse_qry_param(col_name)
+        col_name, op = self._parseQryParam(col_name)
         if col_name not in excluded_cols:
             return (
                 self.session.query(metric_table.c.metric_uid)
@@ -124,21 +140,21 @@ class QueryService(BaseService):
     e.g. {"temperature__eq": 98.6}
     """
 
-    def _criteria_for_request(self, request, table):
+    def _criteriaForRequest(self, request, table):
         attrs = table.c.keys()
-        col_names = self._get_table_user_defined_col_names(table)
+        col_names = self._getTableUserDefinedColNames(table)
         # identify the columns that they are filtering by and the operation
 
         criteria_keys = [
             k
             for k in request.args.keys()
-            if self._parse_qry_param(k)[0] in [*attrs, *col_names]
+            if self._parseQryParam(k)[0] in [*attrs, *col_names]
         ]
 
         # applys a "like" operation to strings
         def as_default(criteria_key, model):
-            name, op = self._parse_qry_param(criteria_key)
-            col_type = self._get_effective_col_type(model.c[name])
+            name, op = self._parseQryParam(criteria_key)
+            col_type = self._getEffectiveColType(model.c[name])
             if col_type is str and op == "==":
                 return f"{criteria_key}__like"
             else:
@@ -154,8 +170,8 @@ class QueryService(BaseService):
         # change user-defined column names into the metric uid for querying if necessary.
         return {
             as_default(
-                self._col_name_to_uid(request, k)
-                if self._parse_qry_param(k)[0] in col_names
+                self._colNameToUID(request, k)
+                if self._parseQryParam(k)[0] in col_names
                 else k,
                 table,
             ): [maybe_null(x) for x in request.args.getlist(k)]
@@ -164,7 +180,7 @@ class QueryService(BaseService):
 
     """tokenizes a query criteria. distinguishes between the column name and the operator"""
 
-    def _parse_qry_param(self, q):
+    def _parseQryParam(self, q):
         # tokenize the query string, get the operators and the name to filter by
         # Format: `col__<`
         # the above will return ["col", "<"]
@@ -178,7 +194,7 @@ class QueryService(BaseService):
 
     """takes a SA column, returns the type that the column is in python"""
 
-    def _get_effective_col_type(self, col):
+    def _getEffectiveColType(self, col):
         try:
             return col.type.python_type
         except NotImplementedError:
@@ -186,11 +202,11 @@ class QueryService(BaseService):
 
     """applies the criteria to a query object"""
 
-    def _apply_kw_criteria(self, qry, table, **criteria):
-        return qry.filter(*self._criteria_to_clauses(table, **criteria))
+    def _applyKWCriteria(self, qry, table, **criteria):
+        return qry.filter(*self._criteriaToClauses(table, **criteria))
 
     # just ensures that the values are in a collection type, not just the value alone. generalizes handling multiple vs one value
-    def _ensure_collection(self, values):
+    def _ensureCollection(self, values):
         if type(values) in [str, bytes]:
             return [values]
         else:
@@ -202,19 +218,19 @@ class QueryService(BaseService):
     """ Builds out a query clause based on the type of the values. If the type is a string/list, its handled differently.
     all other types are handled by `clause_from_default`"""
 
-    def _query_clause(self, col, op, values):
+    def _queryClause(self, col, op, values):
         clause_from = clause_map.get(
-            self._get_effective_col_type(col), clause_from_default
+            self._getEffectiveColType(col), clause_from_default
         )
-        v = self._ensure_collection(values)
+        v = self._ensureCollection(values)
         return clause_from(col, op, v)
 
     """converts the query criteria to a clause to be applied to a query object. """
 
-    def _criteria_to_clauses(self, table, **criteria):
+    def _criteriaToClauses(self, table, **criteria):
         m = table.c
-        params = (self._parse_qry_param(k) + [values] for k, values in criteria.items())
+        params = (self._parseQryParam(k) + [values] for k, values in criteria.items())
         return [
-            self._query_clause(getattr(m, col_name), op, values)
+            self._queryClause(getattr(m, col_name), op, values)
             for col_name, op, values in params
         ]

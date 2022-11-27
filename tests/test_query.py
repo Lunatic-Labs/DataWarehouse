@@ -14,6 +14,7 @@ def create_and_seed_table(test_app, engine, session):
     session.execute(
         """
         CREATE TABLE public.\"4f256af2-fb4f-4920-89c7-3c839a213d21\" (
+            pk uuid DEFAULT uuid_in(overlay(overlay(md5(random()::text || ':' || random()::text) placing '4' from 13) placing to_hex(floor(random()*(11-8+1) + 8)::int)::text from 17)::cstring) PRIMARY KEY,
             \"9e498b97-a09d-44d0-ad47-54019ae87945\" int NULL,
             \"af5da2ef-7208-4ea9-b2f5-a39488e66930\" varchar NULL,
             \"dd999164-db5f-4e8e-9c47-9cb49ae3d294\" float8 NULL,
@@ -130,3 +131,31 @@ def test_query(
     json = resp.json
 
     assert len(json.keys()) == rows_expected
+
+
+@pytest.mark.parametrize(
+    "criteria_objs, expected_rows",
+    [
+        (
+            [Col_op_val("integer1", "eq", "50"), Col_op_val("integer1", "eq", 1)],
+            2,
+        ),  # this makes an or operation
+        (
+            [Col_op_val("integer1", "<", 9), Col_op_val("string1", "like", "%strin%")],
+            1,
+        ),  # this makes an and operation
+    ],
+)
+def test_complex_query(
+    test_app, session, create_and_seed_table, criteria_objs, expected_rows
+):
+    qs = create_query_string(*criteria_objs)
+    resp = test_app.get(
+        "api/query/4f256af2-fb4f-4920-89c7-3c839a213d21/4f256af2-fb4f-4920-89c7-3c839a213d21/"
+        + qs
+    )
+
+    assert resp.status_code == 200
+    json = resp.json
+
+    assert len(json.keys()) == expected_rows

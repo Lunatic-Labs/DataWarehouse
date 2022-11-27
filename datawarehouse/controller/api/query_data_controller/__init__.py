@@ -22,7 +22,7 @@ def index(group_uid, source_uid):
     for x in data:
         keys = list(data[x].keys())
         for metric in keys:
-            if metric != "timestamp":
+            if metric != "timestamp" and metric != "pk":
                 col_name = meta_service.get_name_from_uid("metric", metric)
                 data[x][col_name] = data[x].pop(metric)
 

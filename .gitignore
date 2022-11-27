@@ -9,3 +9,4 @@ build/
 .eggs/
 dist/
 *.eggs-info/
+DataWarehouse\.egg-info/

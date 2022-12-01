@@ -92,7 +92,7 @@ class QueryService(BaseService):
             qry = s.query(table)  # create a base query object on the table
         criteria = self._criteriaForRequest(
             request=request, table=table
-        )  # extract the query criteria from the request query string   
+        )  # extract the query criteria from the request query string
         qry = self._applyKWCriteria(qry, table, **criteria)
         rslt = qry.order_by(table.c.timestamp.desc()).limit(limit).all()
         return rslt

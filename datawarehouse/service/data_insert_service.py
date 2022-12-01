@@ -9,6 +9,7 @@ from datawarehouse.model import metric
 
 class InsertDataService(BaseService):
     session = db.session
+
     def verifyInformation(self, data):
         """
         verifyInformation(self, data) -> Err

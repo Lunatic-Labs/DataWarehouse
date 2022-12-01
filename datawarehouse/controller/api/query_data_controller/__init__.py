@@ -25,9 +25,11 @@ def index(group_uid, source_uid):
         for metric in keys:
             if metric != "timestamp" and metric != "pk":
                 if metric not in cached_metrics:
-                    cached_metrics[metric] = meta_service.get_name_from_uid("metric", metric)
+                    cached_metrics[metric] = meta_service.get_name_from_uid(
+                        "metric", metric
+                    )
                 col_name = cached_metrics[metric]
-                    
+
                 data[x][col_name] = data[x].pop(metric)
 
     return data

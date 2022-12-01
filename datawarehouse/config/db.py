@@ -49,6 +49,7 @@ class dbconfig(object):
     def session(self):
         return orm.sessionmaker(self.engine)
 
+
 # the dbconfig object allows for a creation of a database instance,
 # and the connection to an existing one. All db info will be available through this. # the dbconfig object allows for a creation of a database instance,
 # and the connection to an existing one. All db info will be available through this.

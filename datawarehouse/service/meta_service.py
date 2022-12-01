@@ -15,7 +15,7 @@ class MetaService(BaseService):
         table = self._get_table(name)
         with self.session() as s:
             row = s.query(table).where(getattr(table.c, uid_name) == uid).first()
-        
+
         if parent_uid:
             parent_uid_name = parents[name] + "_uid"
             if getattr(row, parent_uid_name) != parent_uid:
@@ -76,7 +76,7 @@ class MetaService(BaseService):
     def get_name_from_uid(self, level, uid):
         table = self._get_table(level)
         with self.session() as s:
-            ret =  (
+            ret = (
                 s.query(table.c.name)
                 .where(getattr(table.c, level + "_uid") == uid)
                 .scalar()

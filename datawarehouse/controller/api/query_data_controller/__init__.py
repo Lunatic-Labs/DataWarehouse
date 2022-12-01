@@ -19,11 +19,16 @@ def index(group_uid, source_uid):
     data = service.query(source_uid, request, limit)
     # change the uid column names into the user-defined column names
     data = {x: data[x]._asdict() for x in range(len(data))}
+    print("formatting Data")
+    cached_metrics = {}
     for x in data:
         keys = list(data[x].keys())
         for metric in keys:
             if metric != "timestamp" and metric != "pk":
-                col_name = meta_service.get_name_from_uid("metric", metric)
+                if metric not in cached_metrics:
+                    cached_metrics[metric] = meta_service.get_name_from_uid("metric", metric)
+                col_name = cached_metrics[metric]
+                    
                 data[x][col_name] = data[x].pop(metric)
 
     return data

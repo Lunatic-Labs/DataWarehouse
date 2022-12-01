@@ -88,27 +88,27 @@ class QueryService(BaseService):
 
     def query(self, table_name, request, limit=1000):
         table = self._get_table(table_name)  # get the table object
-        qry = self.session.query(table)  # create a base query object on the table
+        with self.session() as s:
+            qry = s.query(table)  # create a base query object on the table
         criteria = self._criteriaForRequest(
             request=request, table=table
-        )  # extract the query criteria from the request query string
-
+        )  # extract the query criteria from the request query string   
         qry = self._applyKWCriteria(qry, table, **criteria)
-
         rslt = qry.order_by(table.c.timestamp.desc()).limit(limit).all()
         return rslt
 
     def _getTableUserDefinedColNames(self, table):
         metric = self._get_table("metric")
-        metric_names = (
-            self.session.query(metric.c.name)
-            .where(
-                metric.c.metric_uid.in_(
-                    [k for k in table.c.keys() if k not in excluded_cols]
+        with self.session() as s:
+            metric_names = (
+                s.query(metric.c.name)
+                .where(
+                    metric.c.metric_uid.in_(
+                        [k for k in table.c.keys() if k not in excluded_cols]
+                    )
                 )
+                .all()
             )
-            .all()
-        )
         metric_names = [k.name for k in metric_names]
         return metric_names
 
@@ -118,18 +118,19 @@ class QueryService(BaseService):
         metric_table = self._get_table("metric")
         col_name, op = self._parseQryParam(col_name)
         if col_name not in excluded_cols:
-            return (
-                self.session.query(metric_table.c.metric_uid)
-                .where(
-                    and_(
-                        metric_table.c.source_uid == source_uid,
-                        metric_table.c.name == col_name,
+            with self.session() as s:
+                return (
+                    s.query(metric_table.c.metric_uid)
+                    .where(
+                        and_(
+                            metric_table.c.source_uid == source_uid,
+                            metric_table.c.name == col_name,
+                        )
                     )
+                    .scalar()
+                    + "__"
+                    + op
                 )
-                .scalar()
-                + "__"
-                + op
-            )
 
         else:
             return col_name + "__" + op
@@ -144,7 +145,6 @@ class QueryService(BaseService):
         attrs = table.c.keys()
         col_names = self._getTableUserDefinedColNames(table)
         # identify the columns that they are filtering by and the operation
-
         criteria_keys = [
             k
             for k in request.args.keys()

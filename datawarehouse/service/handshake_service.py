@@ -73,9 +73,10 @@ class HandshakeService(BaseService):
         # The double asterisk is a way to unpack a dictionary. read more here https://medium.com/swlh/how-to-pack-and-unpack-data-in-python-tuples-and-dictionaries-55d218c65674
         # commit data to db
         stmt = insert(group).values(**group_properties)
-        self.session.begin()
-        self.session.execute(stmt)
-        self.session.commit()
+        with self.session() as s:
+            s.begin()
+            s.execute(stmt)
+            s.commit()
 
         # add source to db
         sources = self._addSources(group_uid, sources)
@@ -106,9 +107,10 @@ class HandshakeService(BaseService):
 
             # commit data to db
             stmt = insert(source).values(**source_props)
-            self.session.begin()
-            self.session.execute(stmt)
-            self.session.commit()
+            with self.session() as sess:
+                sess.begin()
+                sess.execute(stmt)
+                sess.commit()
 
             # add metrics to db
             metrics = self._addMetrics(source_uid, s["metrics"])
@@ -137,9 +139,10 @@ class HandshakeService(BaseService):
             stmt = insert(metric).values(
                 source_uid=source_uid, metric_uid=metric_uid, **m
             )
-            self.session.begin()
-            self.session.execute(stmt)
-            self.session.commit()
+            with self.session() as s:
+                s.begin()
+                s.execute(stmt)
+                s.commit()
 
             # add metric_uid to dict
             m.update(dict(metric_uid=metric_uid))

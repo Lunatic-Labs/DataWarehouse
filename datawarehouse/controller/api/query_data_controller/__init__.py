@@ -19,7 +19,6 @@ def index(group_uid, source_uid):
     data = service.query(source_uid, request, limit)
     # change the uid column names into the user-defined column names
     data = {x: data[x]._asdict() for x in range(len(data))}
-    print("formatting Data")
     cached_metrics = {}
     for x in data:
         keys = list(data[x].keys())

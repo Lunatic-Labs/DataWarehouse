@@ -13,7 +13,9 @@ class MetaService(BaseService):
     def _get_meta(self, name, uid, parent_uid=None):
         uid_name = name + "_uid"
         table = self._get_table(name)
-        row = self.session.query(table).where(getattr(table.c, uid_name) == uid).first()
+        with self.session() as s:
+            row = s.query(table).where(getattr(table.c, uid_name) == uid).first()
+        
         if parent_uid:
             parent_uid_name = parents[name] + "_uid"
             if getattr(row, parent_uid_name) != parent_uid:
@@ -73,11 +75,13 @@ class MetaService(BaseService):
 
     def get_name_from_uid(self, level, uid):
         table = self._get_table(level)
-        return (
-            self.session.query(table.c.name)
-            .where(getattr(table.c, level + "_uid") == uid)
-            .scalar()
-        )
+        with self.session() as s:
+            ret =  (
+                s.query(table.c.name)
+                .where(getattr(table.c, level + "_uid") == uid)
+                .scalar()
+            )
+        return ret
 
     # this function breaks on the query line. Not sure why. must investigate.
     def ensure_group_ownership_of_source(self, group_uid, source_uid):

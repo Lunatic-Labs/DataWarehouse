@@ -47,7 +47,7 @@ class dbconfig(object):
 
     @property
     def session(self):
-        return self._scoped_session_factory()
+        return orm.sessionmaker(self.engine)
 
 
 # the dbconfig object allows for a creation of a database instance,

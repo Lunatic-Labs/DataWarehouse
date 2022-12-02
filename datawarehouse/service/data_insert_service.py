@@ -8,6 +8,8 @@ from datawarehouse.model import metric
 
 
 class InsertDataService(BaseService):
+    session = db.session
+
     def verifyInformation(self, data):
         """
         verifyInformation(self, data) -> Err
@@ -48,5 +50,9 @@ class InsertDataService(BaseService):
         values = {}
         for _metric in data["metrics"]:
             values[_metric["metric_uid"]] = _metric["value"]
-        stmt = table.insert().values({**values, "timestamp": datetime.now()})
-        self._connection.execute(stmt)
+
+        with self.session() as s:
+            s.begin()
+            stmt = table.insert().values({**values, "timestamp": datetime.now()})
+            s.execute(stmt)
+            s.commit()

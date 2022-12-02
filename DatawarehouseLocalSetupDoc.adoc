@@ -1,0 +1,23 @@
+= Datawarehouse Local Setup Documentation
+
+== Requirements for setup
+* Python 3.10
+* pip
+* A local postgresql server 
+ 
+== Setup
+* clone the repo. run `git clone https://github.com/Lunatic-Labs/DataWarehouse.git` in the directory you want the repo to be in. 
+* with a terminal in the root directory of the folder, (the folder with the `README.md` file in it) run `pip install .` to get all the python packages. This runs the `setup.py` file, which contains all the required python dependencies. 
+* to get the starting db, go to the root directory of the project, and run `psql data_warehouse < backupdb.bak`. If this doenst work, you probably dont have postgres installed correctly. THis will create a database named 'data_warehouse' and create the required tables to start the datawarehouse
+* Create a file in the root directory of the project called `.env` (that is a leading period). This will house your environemnt variables. 
+** Inside that file will be these lines. you will need to replace the words in  the `< >` symbols with things relevant to your local setup. 
+*** Required:
+**** `DATABASE_URL='<the postgres uri for your local/online database>'` 
+***** This is a uri that points to your database. Either the local (created above) or the online one works. You will have to find your own uri in order to complete this step.
+***** example: `DATABASE_URL='postgresql://postgres:postgres@localhost:5432/data_warehouse'`
+***** format for a postgres db uri: `postgres://username:password@hostname:portnumber/database_name`
+*** `FLASK_APP=datawarehouse`
+*** Optional:
+**** `FLASK_DEBUG=1`
+***** turns on debug mode. turn off for production servers. 
+* In order to run the project, navigate to the root folder of the project in a terminal, and run the command `flask run`

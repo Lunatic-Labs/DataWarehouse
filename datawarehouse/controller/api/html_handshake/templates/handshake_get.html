@@ -11,6 +11,7 @@
 <body>
     <h1>Data Storage Handshake Information</h1>
     <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
+        <button type="submit" value="submit">Submit</button><br>
 
         <label for="group_name">Group Name:</label>
         <input type="text" id="group_name" name="group_name" required="required" placeholder="your organization's name">
@@ -72,9 +73,8 @@
 
             </div>
         </div>
+        <button type="button" id="add_src" onclick="addSource()">Add another source...</button>
     </form>
-    <button type="button" id="add_src" onclick="addSource()">Add another source...</button>
-    <button type="submit">Submit</button>
 </body>
 
 </html>

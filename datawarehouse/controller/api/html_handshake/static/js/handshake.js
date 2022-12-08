@@ -115,7 +115,7 @@ function removeSource(element) {
     var src_num = parseInt(outer_div.id.slice(src_index + 1));
 
     //iterate over both inner and outer div names, and change them to reflect 
-    //the correct enumeration
+    //the correct enumeration (source number)
     var metric_names = document.getElementsByTagName("div");
     for (var i = 0, j = -1; i < metric_names.length; i++) {
         // "source0" 
@@ -164,4 +164,61 @@ document.addEventListener("click", function () {
         //change the heading
         metric_titles[i].innerHTML = `Metric #${indices[1] + 1} for Source #${indices[0] + 1}`;
     }
+});
+
+//create the json object upon submission
+var json_form = {}; 
+document.addEventListener("submit", function () {
+    json_form.group_name = document.getElementById("group_name").value; 
+    json_form.class = document.getElementById("class").value; 
+    json_form.location = document.getElementById("location").value; 
+
+    json_form.sources = [];
+
+    //get sources data
+    var x = 0; 
+    while (true) {
+        try { 
+            var source = document.getElementById(x + ".overview"); 
+            
+            var source_info = {}; 
+            source_info.src_name = source.getElementsByTagName("input")[0].value;
+            source_info.tz_info = source.getElementsByTagName("select")[0].value;
+
+            metric_list = []; 
+
+            //json_form.sources[x].metrics = []; 
+
+            //get metrics data (which are housed within each source)
+            ///*
+            var y = 0;
+            while (true) {
+                try {
+                    var metric = document.getElementById(x + "." + y);
+    
+                    var metric_info = {};
+                    metric_info.metric_name = metric.getElementsByTagName("input")[0].value; 
+                    metric_info.datatype = metric.getElementsByTagName("select")[0].value; 
+                    metric_info.units = metric.getElementsByTagName("input")[1].value; 
+                    metric_info.sort_asc = metric.getElementsByTagName("input")[1].value; 
+
+                    metric_list.push(metric_info);
+                    //json_form.sources[x].metrics.push(metric_info);    
+                }
+                catch { break; }
+
+                y += 1; 
+            }
+            //*/
+            source_info.metrics = metric_list;
+            json_form.sources.push(source_info);
+        }
+        catch { break; }
+
+
+        x += 1; 
+    } 
+
+    json_form = JSON.stringify(json_form);
+    window.alert("Your submission has been received!\n" + json_form);
 });

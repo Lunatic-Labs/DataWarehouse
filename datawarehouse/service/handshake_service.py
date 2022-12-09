@@ -13,8 +13,10 @@ from uuid import uuid4 as _uuid4
 def uuid4():
     return str(_uuid4())
 
-
 class HandshakeService(BaseService):
+
+    _types = [sqlalchemy.Integer, sqlalchemy.Float, sqlalchemy.String, sqlalchemy.Boolean]
+
     session = db.session
     _engine = db.engine
     _metadata_obj = db.meta
@@ -203,15 +205,10 @@ class HandshakeService(BaseService):
 
     @classmethod
     def _getType(self, type_):
-        if type_ == "integer":
-            return sqlalchemy.Integer
-        elif type_ == "float":
-            return sqlalchemy.Float
-        elif type_ == "bool":
-            return sqlalchemy.Boolean
-        elif type_ == "string":
-            return sqlalchemy.String
-        assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type_)
+        types_len = len(self._types)
+        if type_ < 0 or type_ > types_len-1:
+            return None
+        return self._types[type_]
 
     """
     closeConnection(self) -> void.
@@ -220,3 +217,4 @@ class HandshakeService(BaseService):
 
     def closeConnection(self):
         self._connection.close()
+

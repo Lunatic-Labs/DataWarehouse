@@ -2,27 +2,8 @@ import json
 from typing import Optional
 
 # Would use if opening a JSON file
-# with open("sample.json") as f:
-#     data = json.load(f)
-
-# Dictionary for testing
-data = {
-    "group_name": "Data Dogs",
-    "classification": "testing",
-    "sources": [
-        {
-            "metrics": [
-                {
-                    "asc": False,
-                    "data_type": "integer",
-                    "name": "WeueKSwmjcGsYVThpwuf",
-                    "units": "students",
-                }
-            ],
-            "name": "Spedometer",
-        }
-    ],
-}
+with open("sample.json") as f:
+    data = json.load(f)
 
 
 class checkJsonFile:
@@ -50,7 +31,7 @@ class checkJsonFile:
         correct = None
         layer = 1
 
-        for outer in data.keys():
+        for outer in self.data.keys():
             check_req = self.requiredFields(outer, layer)
             check_opt = self.optionalFields(outer, layer)
             correct = self.supportedType(check_req, check_opt)
@@ -62,7 +43,7 @@ class checkJsonFile:
         correct = None
         layer = 2
 
-        for source in data["sources"]:
+        for source in self.data["sources"]:
             for key in source.keys():
                 check_req = self.requiredFields(key, layer)
                 check_opt = self.optionalFields(key, layer)
@@ -75,7 +56,7 @@ class checkJsonFile:
         correct = None
         layer = 3
 
-        for source in data["sources"]:
+        for source in self.data["sources"]:
             for metric in source["metrics"]:
                 for key in metric.keys():
                     check_req = self.requiredFields(key, layer)

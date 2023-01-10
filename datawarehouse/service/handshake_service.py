@@ -172,7 +172,12 @@ class HandshakeService(BaseService):
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
             for metric in src["metrics"]:
                 col_name = metric["metric_uid"]
-                col_type = self._getType(metric["data_type"])
+                if type(metric["data_type"]) == str:
+                    col_type = self._getType(metric["data_type"])
+                elif type(metric["data_type"]) == int:
+                    print('did this"')
+                    col_type = self._getType2(metric["data_type"])
+
                 table.append_column(sqlalchemy.Column(col_name, col_type))
             table.append_column(
                 sqlalchemy.Column(
@@ -213,6 +218,8 @@ class HandshakeService(BaseService):
             return sqlalchemy.String
         assert False, "HandshakeService ERROR: INVALID TYPE. {}".format(type_)
 
+
+
     """
     closeConnection(self) -> void.
     Public method. Closes the database connection.
@@ -220,3 +227,34 @@ class HandshakeService(BaseService):
 
     def closeConnection(self):
         self._connection.close()
+
+    types = {
+        1:sqlalchemy.Text,
+        2:sqlalchemy.TupleType,
+        3:sqlalchemy.String,
+        4:sqlalchemy.Integer,
+        5:sqlalchemy.SmallInteger,
+        6:sqlalchemy.BigInteger,
+        7:sqlalchemy.Numeric,
+        8:sqlalchemy.Float,
+        9:sqlalchemy.DateTime,
+        10:sqlalchemy.Date,
+        11:sqlalchemy.Time,
+        12:sqlalchemy.LargeBinary,
+        13:sqlalchemy.Boolean,
+        14:sqlalchemy.Unicode,
+        15:sqlalchemy.UnicodeText,
+        16:sqlalchemy.Interval,
+    }
+
+    """
+    _getType2(self, type) -> sqlalchemy.Type
+    Private method. Takes type: int, and determines the
+    appropriate sqlalchemy.Type to return.
+    """
+    @classmethod
+    def _getType2(self, type_):
+        col_type = self.types.get(type_, None)
+        if col_type == None:
+            raise Exception("Invalid type")
+        return col_type

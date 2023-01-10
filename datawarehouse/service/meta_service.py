@@ -32,6 +32,10 @@ class MetaService(BaseService):
     #           ]}, ...
     #       ]
     # }
+
+## NOTE TO FUTURE DEVELOPERS
+# have this take a group_uid and return all of its sources/metrics etc. right now, it just returns the group info if only the group_uid is provided.
+    
     def get_metadata(self, uids: dict):
         meta_dict = dict()
         if "group_uid" not in uids.keys():

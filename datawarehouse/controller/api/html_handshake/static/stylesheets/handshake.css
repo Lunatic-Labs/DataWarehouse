@@ -1,5 +1,10 @@
 form {
     margin: auto;
     align-items: center;
-    padding-top: 70px;
+}
+
+input,
+select {
+    display: block;
+    width: 300px;
 }

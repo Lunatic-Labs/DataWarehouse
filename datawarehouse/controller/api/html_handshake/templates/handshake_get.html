@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Login Form</title>
+    <link rel="stylesheet" type="text/css" href="stylesheets/handshake.css" />
+    <script src="js/handshake.js" defer></script>
+</head>
+
+<body>
+    <h1>Data Storage Handshake Information</h1>
+    <form action="{{ url_for('api.hs_bp.hs_func') }}" method="post">
+        <button type="submit" value="submit">Submit</button><br>
+
+        <label for="group_name">Group Name:</label>
+        <input type="text" id="group_name" name="group_name" required="required" placeholder="your organization's name">
+
+        <label for="class">Classification:</label>
+        <input type="text" id="class" name="class" placeholder="testing, production, etc.">
+
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" placeholder="Enter location of group here">
+
+        <div id="source0">
+            <div id="0.overview">
+                <h2>Source #1</h2>
+                <button type="button" id="add_metric" onclick="addMetric(this)">Add another metric...</button><br>
+                <button type="button" id="remove_src" onclick="removeSource(this)">Remove this source...</button><br>
+                <label for="src_name">Source Name:</label>
+                <input type="text" id="src_name" name="src_name" required="required"
+                    placeholder="speedometer, thermometer, GPS, etc.">
+
+                <label for="tz_info">Timezone:</label>
+                <select name="tz_info" id="tz_info">
+                    <option disabled selected value>Please select...</option>
+                    <option value="-10:00">(GMT -10:00) Hawaii</option>
+                    <option value="-09:00">(GMT -9:00) Alaska</option>
+                    <option value="-08:00">(GMT -8:00) Pacific Time</option>
+                    <option value="-07:00">(GMT -7:00) Mountain Time</option>
+                    <option value="-06:00">(GMT -6:00) Central Time</option>
+                    <option value="-05:00">(GMT -5:00) Eastern Time</option>
+                    <option value="-04:00">(GMT -4:00) Atlantic Time</option>
+                </select>
+            </div>
+
+            <div id="0.0">
+                <h3>Metric #1 for Source #1</h3>
+
+                <label for="metric_name">Metric Name:</label>
+                <input type="text" id="metric_name" name="metric_name" required="required"
+                    placeholder="x-coordinate, temperature, speed, height, etc.">
+
+                <label for="datatype">Datatype of measured data:</label>
+                <select id="datatype" name="datatype" required="required">
+                    <option disabled selected value>Please select...</option>
+                    <option value=1>Whole number (integer)</option>
+                    <option value=2>Characters (string)</option>
+                    <option value=3>Decimal number (float)</option>
+                    <option value=4>Yes/No (boolean)</option>
+                    <option value=5>Date and time (datetime)</option>
+                </select>
+
+                <label for="units">Units:</label>
+                <input type="text" id="units" name="units" placeholder="degrees, inches, miles, etc.">
+
+                <label for="asc">Sort data in ascending order?</label>
+                <select id="asc" name="asc">
+                    <option value="true">Yes, sort the data in ascending order (default)</option>
+                    <option value="false">No, do not sort the data in ascending order</option>
+                </select>
+                <button type="button" id="remove_metric" onclick="removeMetric(this)">Remove this metric...</button>
+
+            </div>
+        </div>
+        <button type="button" id="add_src" onclick="addSource()">Add another source...</button>
+    </form>
+</body>
+
+</html>

@@ -39,6 +39,10 @@ def _postToHttps(url, filename):
 #Figuring out what each part does, but may need to call this before post_data in above function.
 def _encodeData(url)
     your_dict = {"a": "a", "b": "b"}
-    res = urllib.request.urlopen(url), urllib.parse.urlencode(your_dict).encode())
+    res = urllib.request.urlopen(url), urllib.parse.urlencode(your_dict).encode()
     # Get the result
     return(res.read())
+
+# urlencode() defined here: https://docs.python.org/2/library/urllib.html#urllib.urlencode 
+# compare to urlparse.parse_qs() at: https://docs.python.org/2/library/urlparse.html#module-urlparse
+# parse seems to have options for converting query strings into strings/dictionaries. Is this what we need?

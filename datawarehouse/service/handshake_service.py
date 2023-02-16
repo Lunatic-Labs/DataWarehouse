@@ -174,11 +174,10 @@ class HandshakeService(BaseService):
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
             for metric in src["metrics"]:
                 col_name = metric["metric_uid"]
-                if type(metric["data_type"]) == str:
-                    col_type = self._getType(metric["data_type"])
-                elif type(metric["data_type"]) == int:
-                    print('did this"')
-                    col_type = self._getType2(metric["data_type"])
+                
+                if type(metric["data_type"]) != int:
+                    raise Exception("Data type must be an integer.")
+                col_type = self._getType2(metric["data_type"])
 
                 table.append_column(sqlalchemy.Column(col_name, col_type))
             table.append_column(
@@ -201,19 +200,6 @@ class HandshakeService(BaseService):
             # Insert the table into the database.
             table.create(self._engine)
             table_num += 1
-
-    """
-    _getType(self, type) -> sqlalchemy.Type.
-    Private method. Takes type: String, and determines the
-    appropriate sqlalchemy.Type to return.
-    """
-
-    @classmethod
-    def _getType(self, type_):
-        types_len = len(self._types)
-        if type_ < 0 or type_ > types_len-1:
-            return None
-        return self._types[type_]
 
 
 
@@ -250,7 +236,7 @@ class HandshakeService(BaseService):
     appropriate sqlalchemy.Type to return.
     """
     @classmethod
-    def _getType2(self, type_):
+    def _getType(self, type_:int):
         col_type = self.types.get(type_, None)
         if col_type == None:
             raise Exception("Invalid type")

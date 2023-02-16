@@ -12,8 +12,12 @@ def handshake_route():
     if not check_json_format(json):
         return "Invalid json format. Please check the documentation.", 500
 
-    return HandshakeService.prepareTables(json)
-
+    
+    #TODO: handle exceptions appropriately Zac
+    try: 
+        return HandshakeService.prepareTables(json)
+    except Exception as e:
+        return "Invalid handshake", 500
 
 def check_json_format(json):
     try:

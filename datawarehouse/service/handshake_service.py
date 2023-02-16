@@ -174,10 +174,7 @@ class HandshakeService(BaseService):
             # Append new columns in `table` with the name, `name`, and the data type, `data_type`.
             for metric in src["metrics"]:
                 col_name = metric["metric_uid"]
-                
-                if type(metric["data_type"]) != int:
-                    raise Exception("Data type must be an integer.")
-                col_type = self._getType2(metric["data_type"])
+                col_type = self._getType(metric["data_type"])
 
                 table.append_column(sqlalchemy.Column(col_name, col_type))
             table.append_column(
@@ -237,7 +234,18 @@ class HandshakeService(BaseService):
     """
     @classmethod
     def _getType(self, type_:int):
+        type_ = self._ensureInt(type_)
         col_type = self.types.get(type_, None)
         if col_type == None:
             raise Exception("Invalid type")
         return col_type
+
+
+    @classmethod 
+    def _ensureInt(self, type_):
+        if type(type_) == str and type_.isnumeric():
+            return int(type_)
+        elif type(type_) == int:
+            return type_
+        else:
+            raise Exception("Data type must be an integer.")

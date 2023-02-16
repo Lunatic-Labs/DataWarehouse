@@ -2,6 +2,7 @@ import pycurl
 import certifi
 import urllib
 import urlparse
+from io import BytesIO #for getFromHttps()
 
 import pycurl
 try:
@@ -12,7 +13,7 @@ except ImportError:
     from urllib import urlencode
 
 #code from http://pycurl.io/docs/latest/quickstart.html, I'm learning what it all does -Justin T.
-#post a given file to a given url using pycurl - url format should be 'https://website.com/' (including single quotes)
+#below: Post a given file to a given url using pycurl - url format should be 'https://website.com/' (including single quotes)
 def _postToHttps(url, filename):
     c = pycurl.Curl()
     c.setopt(c.URL, url)
@@ -36,7 +37,7 @@ def _postToHttps(url, filename):
     c.perform()
     c.close()
 
-#below: code from https://stackoverflow.com/questions/24572210/what-is-the-equivalent-to-curls-data-urlencode-in-pycurl
+#below: Code from https://stackoverflow.com/questions/24572210/what-is-the-equivalent-to-curls-data-urlencode-in-pycurl
 
 def _encodeData(url, queryString):
     your_dict = {urlparse.parse_qs(queryString)}
@@ -48,5 +49,20 @@ def _encodeData(url, queryString):
 # parse_qs() returns a dictionary made from the string argument (the query string)
 # If we need the string as name & value data pairs we should use parse_qsl()
 
-def _pullFromHttps():
-    #Going to define this function next.
+# Code from https://stackabuse.com/using-curl-in-python-with-pycurl/ - OPTION 1
+# and http://pycurl.io/docs/latest/quickstart.html                   - OPTION 2
+# below: pull from a given url, written in bytes - url format should be 'https://website.com/' (including single quotes)
+def _getFromHttps(url, filename):
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+
+    # OPTION 1: Write bytes into the given file. File format should be 'file.txt' (including single quotes)
+    c.setopt(c.WRITEDATA, filename)
+
+    # OPTION 2: Write bytes to a buffer--a stringIO object
+    buffer = BytesIO()
+    c.setopt(c.WRITEFUNCTION, buffer.write)
+    c.setopt(c.CAINFO, certifi.where())
+
+    c.perform()
+    c.close()

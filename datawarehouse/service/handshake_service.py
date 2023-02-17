@@ -13,9 +13,15 @@ from uuid import uuid4 as _uuid4
 def uuid4():
     return str(_uuid4())
 
+
 class HandshakeService(BaseService):
 
-    _types = [sqlalchemy.Integer, sqlalchemy.Float, sqlalchemy.String, sqlalchemy.Boolean]
+    _types = [
+        sqlalchemy.Integer,
+        sqlalchemy.Float,
+        sqlalchemy.String,
+        sqlalchemy.Boolean,
+    ]
 
     session = db.session
     _engine = db.engine
@@ -198,8 +204,6 @@ class HandshakeService(BaseService):
             table.create(self._engine)
             table_num += 1
 
-
-
     """
     closeConnection(self) -> void.
     Public method. Closes the database connection.
@@ -209,22 +213,22 @@ class HandshakeService(BaseService):
         self._connection.close()
 
     types = {
-        1:sqlalchemy.Text,
-        2:sqlalchemy.TupleType,
-        3:sqlalchemy.String,
-        4:sqlalchemy.Integer,
-        5:sqlalchemy.SmallInteger,
-        6:sqlalchemy.BigInteger,
-        7:sqlalchemy.Numeric,
-        8:sqlalchemy.Float,
-        9:sqlalchemy.DateTime,
-        10:sqlalchemy.Date,
-        11:sqlalchemy.Time,
-        12:sqlalchemy.LargeBinary,
-        13:sqlalchemy.Boolean,
-        14:sqlalchemy.Unicode,
-        15:sqlalchemy.UnicodeText,
-        16:sqlalchemy.Interval,
+        1: sqlalchemy.Text,
+        2: sqlalchemy.TupleType,
+        3: sqlalchemy.String,
+        4: sqlalchemy.Integer,
+        5: sqlalchemy.SmallInteger,
+        6: sqlalchemy.BigInteger,
+        7: sqlalchemy.Numeric,
+        8: sqlalchemy.Float,
+        9: sqlalchemy.DateTime,
+        10: sqlalchemy.Date,
+        11: sqlalchemy.Time,
+        12: sqlalchemy.LargeBinary,
+        13: sqlalchemy.Boolean,
+        14: sqlalchemy.Unicode,
+        15: sqlalchemy.UnicodeText,
+        16: sqlalchemy.Interval,
     }
 
     """
@@ -232,16 +236,16 @@ class HandshakeService(BaseService):
     Private method. Takes type: int, and determines the
     appropriate sqlalchemy.Type to return.
     """
+
     @classmethod
-    def _getType(self, type_:int):
+    def _getType(self, type_: int):
         type_ = self._ensureInt(type_)
         col_type = self.types.get(type_, None)
         if col_type == None:
             raise Exception("Invalid type")
         return col_type
 
-
-    @classmethod 
+    @classmethod
     def _ensureInt(self, type_):
         if type(type_) == str and type_.isnumeric():
             return int(type_)

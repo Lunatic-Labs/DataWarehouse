@@ -59,10 +59,15 @@ def _getFromHttps(url, filename):
     # OPTION 1: Write bytes into the given file. File format should be 'file.txt' (including single quotes)
     c.setopt(c.WRITEDATA, filename)
 
-    # OPTION 2: Write bytes to a buffer--a stringIO object
+
+def _getFromHttps(url):
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+
+    # OPTION 2: Write bytes to a BytesIO object. Not sure how this is stored.
     buffer = BytesIO()
     c.setopt(c.WRITEFUNCTION, buffer.write)
-    c.setopt(c.CAINFO, certifi.where())
+    c.setopt(c.CAINFO, certifi.where()) #HTTPS Certificate
 
     c.perform()
     c.close()

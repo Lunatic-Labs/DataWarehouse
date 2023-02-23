@@ -59,6 +59,8 @@ def _getFromHttps(url, filename):
     # OPTION 1: Write bytes into the given file. File format should be 'file.txt' (including single quotes)
     c.setopt(c.WRITEDATA, filename)
 
+    c.perform()
+    c.close()
 
 def _getFromHttps(url):
     c = pycurl.Curl()

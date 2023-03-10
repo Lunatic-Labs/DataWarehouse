@@ -1,3 +1,3 @@
 #!/bin/bash
 set -x
-gcc -o main main.c datawarehouse_interface.c
+gcc -lcurl -o main main.c datawarehouse_interface.c

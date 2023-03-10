@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -I.
+CFLAGS = -I. -lcurl
 DEPS = datawarehouse_interface.h
 OBJ = main.o datawarehouse_interface.o
 

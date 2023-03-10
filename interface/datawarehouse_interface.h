@@ -1,5 +1,6 @@
 #ifndef DATAWAREHOUSE_INTERFACE
 #define DATAWAREHOUSE_INTERFACE
+#include <stdio.h>
 
 typedef struct DWInterface DWInterface;
 

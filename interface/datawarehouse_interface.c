@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <assert.h> // Could be useful?
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +8,9 @@
 #include "datawarehouse_interface.h"
 
 #define UNIMPLEMENTED printf("Unimplemented: %s at line %d\n", __func__, __LINE__)
+
+// PANIC macro. Provide a string or nothing to
+// print a reason for crashing abruptly.
 #define PANIC(msg) do {                                                          \
   fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__);             \
   exit(EXIT_FAILURE);                                                            \
@@ -19,6 +22,7 @@ struct buffer_t {
   size_t max;
 };
 
+// Our main `object` that we are dealing with.
 typedef struct DWInterface {
   char *username;
   char *password;
@@ -49,6 +53,7 @@ static void *s_realloc(void *ptr, size_t nbytes) {
   return p;
 }
 
+// Private. Strictly used for constructing a `buffer_t`.
 struct buffer_t buffer_t_create(size_t m) {
   struct buffer_t buff;
   buff.data = s_malloc(m * sizeof(char));
@@ -73,6 +78,8 @@ static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
   return real_size;
 }
 
+// Public. This is the first function that should be called by the user.
+// This function acts as a constructor for the `DWInterface` object.
 DWInterface *dw_interface_create(const char *username, const char *password) {
   size_t usr_len  = strlen(username);
   size_t pass_len = strlen(password);
@@ -98,14 +105,25 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
   return dwi;
 }
 
+// Public. The goal of this function is to provide the DataWarehouse
+// with a properly formatted JSON file. This function MUST be called
+// first, before inserting/querying data. The function should return
+// 2 uuid's, each 36 bytes long. Maybe we should have UUID's be member
+// variables of the DWInterface struct?
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath) {
   UNIMPLEMENTED;
 }
 
+// Public. The goal of this function is to insert new information
+// into the DataWarehouse. Note that it takes a `FILE*` and not a `char*`.
+// This is to allow support for a file located not in the CWD.
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_filepath) {
   UNIMPLEMENTED;
 }
 
+// Public. The goal of this function is to provide it with a `query_string`
+// and it will send it to the DataWarehouse, hopefully getting back a JSON
+// formatted string (char*).
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
   struct buffer_t buf = buffer_t_create(1024);
   curl_easy_setopt(dwi->curl, CURLOPT_WRITEFUNCTION, callback);
@@ -115,7 +133,9 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
   CURLcode curl_code = curl_easy_perform(dwi->curl);
 
   if (curl_code != CURLE_OK) {
-    PANIC(curl did not succeed);
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(curl_code));
+    PANIC();
   }
 
   char *data = buf.data; // Do something with data?
@@ -123,6 +143,8 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
   return data;
 }
 
+// Public. This is the last function that should be
+// called by the user. Free()'s up all memory.
 void dw_interface_destroy(DWInterface *dwi) {
   if (!dwi) {
     PANIC(dw_interface_create() must be called first);

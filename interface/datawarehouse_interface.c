@@ -14,7 +14,7 @@
 } while (0)
 
 struct buffer_t {
-  char *data;
+  char  *data;
   size_t size;
   size_t max;
 };

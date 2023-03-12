@@ -11,11 +11,14 @@
 #include "datawarehouse_interface.h"
 
 #define IP_ADDR       "54.174.120.179"
-#define PORT           5000 // Dev port.
+#define PORT           5000                                          // Dev port.
 #define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
 #define INSERT_URl    "TODO"
 #define QUERY_URL     "TODO"
-#define LOCALHOST_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
+
+#define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
+#define LOCALHOST_INSERT_URl    "TODO"                               // For local dev.
+#define LOCALHOST_QUERY_URL     "TODO"                               // For local dev.
 
 #define UUID_LEN 36
 
@@ -203,14 +206,14 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  char **uuids = s_malloc(sizeof(char *) * 2);
+  char **uuids = NULL, *file_data = NULL;
+  struct curl_slist *headers = NULL;
+  size_t file_size;
+  CURLcode curl_code;
+
+  uuids        = s_malloc(sizeof(char *) * 2);
   *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
   *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
-
-  struct curl_slist *headers = NULL;
-  char    *file_data         = NULL;
-  size_t   file_size;
-  CURLcode curl_code;
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);

@@ -10,14 +10,18 @@
 
 #include "datawarehouse_interface.h"
 
-#define IP_ADDR        "54.174.120.179"
-#define PORT            5000 // Dev port.
-#define HANDSHAKE_ADDR "http://54.174.120.179:5000/api/prepare/"
-#define INSERT_ADDR    "TODO"
-#define QUERY_ADDR     "TODO"
+#define IP_ADDR       "54.174.120.179"
+#define PORT           5000 // Dev port.
+#define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
+#define INSERT_URl    "TODO"
+#define QUERY_URL     "TODO"
+#define LOCALHOST_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
 
-#define UNIMPLEMENTED printf("Unimplemented: %s at line %d\n", __func__, __LINE__)
-#define NOP(x) (void)(x);
+#define UUID_LEN 36
+
+#define NOP(x)         (void)(x);
+#define UNIMPLEMENTED  printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
+  exit(EXIT_FAILURE);
 
 /*
  * PANIC: A macro that prints an error message and exits the program with a
@@ -194,16 +198,62 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        current session.
- *   json_filepath: a pointer to a FILE object that represents the JSON file.
+ *   json_file: a pointer to a FILE object that represents the JSON file.
  * Return value:
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
-char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath) {
-  NOP(dwi);
-  NOP(json_filepath);
-  UNIMPLEMENTED;
-  return NULL;
+char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+  char **uuids = s_malloc(sizeof(char *) * 2);
+  *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
+  *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
+
+  struct curl_slist *headers = NULL;
+  char    *file_data         = NULL;
+  size_t   file_size;
+  CURLcode curl_code;
+
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
+
+  // Set the content type header to application/json.
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
+
+  // Get the size of the file.
+  fseek(json_file, 0, SEEK_END);
+  file_size = ftell(json_file);
+  rewind(json_file);
+
+  // Get the file data.
+  file_data = malloc(file_size + 1);
+  if (!fread(file_data, 1, file_size, json_file)) {
+    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
+            strerror(errno));
+    PANIC();
+  }
+  file_data[file_size] = '\0';
+  fclose(json_file);
+
+  // Set the request body to the file contents.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
+
+  // Set the request body size to the size of the file.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
+
+  curl_code = curl_easy_perform(dwi->curl_handle);
+  if (curl_code != CURLE_OK) {
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(curl_code));
+    PANIC();
+  }
+
+  curl_slist_free_all(headers);
+
+  // TODO: assign UUIDS.
+
+  return uuids;
 }
+
 
 /*
  * This function inserts new information into the DataWarehouse by sending a POST request
@@ -211,14 +261,14 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        DataWarehouse connection.
- *   json_filepath: a pointer to a FILE object that represents the JSON file.
+ *   json_file: a pointer to a FILE object that represents the JSON file.
  * Return value:
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-int dw_interface_insert_data(const DWInterface *dwi, FILE *json_filepath) {
+int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   NOP(dwi);
-  NOP(json_filepath);
+  NOP(json_file);
   UNIMPLEMENTED;
   return 0;
 }
@@ -235,10 +285,13 @@ int dw_interface_insert_data(const DWInterface *dwi, FILE *json_filepath) {
  *   returned by the DataWarehouse.
  */
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
+
+  NOP(query_string);
+
   struct buffer_t buf = buffer_t_create(1024);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           query_string); // Using query_string as a placeholder.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_URL); // Replace this.
 
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 

@@ -1,5 +1,6 @@
 #include <assert.h> // Could be useful.
 #include <errno.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,6 +111,25 @@ static void *s_realloc(void *ptr, size_t nbytes) {
     PANIC();
   }
   return p;
+}
+
+/*
+ * verify_uuid: A function that checks if a string is a valid UUID.
+ * Parameters:
+ *   uuid: The string to be checked.
+ * Returns:
+ *   0 if the string is a valid UUID, REG_NOMATCH if it is not, or a
+ *   nonzero error code if an error occurs.
+ * NOTE: We may not need this function, but it's here just in case.
+ */
+static int verify_uuid(const char *uuid) {
+  regex_t regex;
+  regcomp(&regex,
+          "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          REG_EXTENDED
+          | REG_NOSUB
+          | REG_ICASE);
+  return regexec(&regex, uuid, (size_t)0, NULL, (int)0);
 }
 
 /*
@@ -252,11 +272,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
 
   curl_slist_free_all(headers);
 
-  // TODO: assign UUIDS.
+  // TODO: assign UUIDs.
+  // TODO: maybe write UUIDs to a file.
 
   return uuids;
 }
-
 
 /*
  * This function inserts new information into the DataWarehouse by sending a POST request
@@ -269,9 +289,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
-  NOP(dwi);
-  NOP(json_file);
+int dw_interface_insert_data(const DWInterface *dwi,
+                             const char *source_uuid,
+                             const char *metric_uuid,
+                             FILE *json_file) {
+  NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
   UNIMPLEMENTED;
   return 0;
 }
@@ -292,9 +314,10 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
   NOP(query_string);
 
   struct buffer_t buf = buffer_t_create(1024);
+
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_URL); // Replace this.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_HANDSHAKE_URL); // Replace this.
 
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 

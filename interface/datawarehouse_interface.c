@@ -14,7 +14,7 @@
 #define IP_ADDR       "54.174.120.179"
 #define PORT           5000                                          // Dev port.
 #define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
-#define INSERT_URl    "TODO"
+#define INSERT_URL    "TODO"
 #define QUERY_URL     "TODO"
 
 #define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
@@ -235,7 +235,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
   *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  LOCALHOST_HANDSHAKE_URL);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
   // Set the content type header to application/json.
@@ -264,6 +264,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
   curl_code = curl_easy_perform(dwi->curl_handle);
+
   if (curl_code != CURLE_OK) {
     fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
             curl_easy_strerror(curl_code));

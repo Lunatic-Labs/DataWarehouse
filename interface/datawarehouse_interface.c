@@ -9,28 +9,60 @@
 
 #define UNIMPLEMENTED printf("Unimplemented: %s at line %d\n", __func__, __LINE__)
 
-// PANIC macro. Provide a string or nothing to
-// print a reason for crashing abruptly.
-#define PANIC(msg) do {                                                          \
-  fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__);             \
-  exit(EXIT_FAILURE);                                                            \
+/*
+ * PANIC: A macro that prints an error message and exits the program with a
+ * failure status. It takes a message as an argument and uses the stringification
+ * operator (#) to convert it to a string literal. It also uses the predefined
+ * macros __FILE__ and __LINE__ to indicate the source file and line number where
+ * the panic occurred. The do-while(0) construct ensures that the macro behaves
+ * like a single statement and avoids dangling else problems.
+ */
+#define PANIC(msg) do {                                              \
+  fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__); \
+  exit(EXIT_FAILURE);                                                \
 } while (0)
 
+// TODO: Instead of calling PANIC() whenever a fatal error occurs, we should
+//       eventually move to using error codes and have a better way to handle
+//       errors or failures.
+enum ErrorCodes {
+  OK = 1,
+};
+
+/*
+ * buffer_t: A structure that represents a dynamic buffer of characters. It
+ * contains fields for the data array, the current size of the buffer, and the
+ * maximum size of the buffer. The data array is allocated and resized using
+ * s_malloc and s_realloc functions. The size field indicates how many bytes are
+ * currently stored in the buffer. The max field indicates how many bytes can be
+ * stored in the buffer without resizing it.
+ */
 struct buffer_t {
   char  *data;
   size_t size;
   size_t max;
 };
 
-// Our main `object` that we are dealing with.
+/*
+ * DWInterface: A structure that represents a DataWarehouse interface. It contains
+ * fields for the username and password of the user, and a curl handle for
+ * making HTTP requests to the DataWarehouse server.
+ */
 typedef struct DWInterface {
   char *username;
   char *password;
-  CURL *curl;
+  CURL *curl_handle;
 } DWInterface;
 
-// Private. A safer malloc() to eliminate checking
-// whether or not malloc() returned successfully.
+/*
+ * s_malloc: A wrapper function for malloc that checks for allocation errors
+ * and exits the program if any occur.
+ * Parameters:
+ *   nbytes: The size of the memory block to be allocated in bytes.
+ * Returns:
+ *   A pointer to the allocated memory block. The content of the block is
+ *   uninitialized.
+ */
 static void *s_malloc(size_t nbytes) {
   void *p = malloc(nbytes);
   if (!p) {
@@ -41,8 +73,18 @@ static void *s_malloc(size_t nbytes) {
   return p;
 }
 
-// Private. A safer realloc() to eliminate checking
-// whether or not realloc() returned successfully.
+/*
+ * s_realloc: A wrapper function for realloc that checks for allocation errors
+ * and exits the program if any occur.
+ * Parameters:
+ *   ptr: A pointer to the memory block to be reallocated, or NULL if a new
+ *        block is requested.
+ *   nbytes: The new size of the memory block in bytes.
+ * Returns:
+ *   A pointer to the reallocated memory block, which may be different from ptr.
+ *   The original content of the block is preserved up to the minimum of the old
+ *   and new sizes.
+ */
 static void *s_realloc(void *ptr, size_t nbytes) {
   void *p = realloc(ptr, nbytes);
   if (!p) {
@@ -53,7 +95,14 @@ static void *s_realloc(void *ptr, size_t nbytes) {
   return p;
 }
 
-// Private. Strictly used for constructing a `buffer_t`.
+/*
+ * buffer_t_create: A function that creates and initializes a buffer_t structure.
+ * Parameters:
+ *   m: The maximum size of the buffer in bytes.
+ * Returns:
+ *   A buffer_t structure with an allocated data array of size m, a size of 0,
+ *   and a max of m.
+ */
 struct buffer_t buffer_t_create(size_t m) {
   struct buffer_t buff;
   buff.data = s_malloc(m * sizeof(char));
@@ -62,7 +111,21 @@ struct buffer_t buffer_t_create(size_t m) {
   return buff;
 }
 
-// Private. Used for data retrieval.
+/*
+ * callback: A function that appends the contents of a data chunk to a buffer_t
+ * structure. It is intended to be used as a write callback function for
+ * libcurl.
+ * Parameters:
+ *   contents: A pointer to the data chunk received by libcurl.
+ *   size: The size of each element in the data chunk in bytes.
+ *   nmemb: The number of elements in the data chunk.
+ *   context: A pointer to a buffer_t structure where the data chunk will be
+ *            appended.
+ * Returns:
+ *   The number of bytes actually appended to the buffer_t structure, which
+ *   should be equal to size*nmemb unless an allocation error occurs. In that
+ *   case, PANIC() is called and the program exits.
+ */
 static size_t callback(void *contents, size_t size, size_t nmemb, void *context) {
   struct buffer_t *b = (struct buffer_t *)context;
   size_t real_size = size * nmemb;
@@ -78,8 +141,17 @@ static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
   return real_size;
 }
 
-// Public. This is the first function that should be called by the user.
-// This function acts as a constructor for the `DWInterface` object.
+/*
+ * dw_interface_create: A function that creates and initializes a DWInterface
+ * structure. It also initializes the libcurl library and creates a curl handle.
+ * Parameters:
+ *   username: A string containing the username for the DWInterface.
+ *   password: A string containing the password for the DWInterface.
+ * Returns:
+ *   A pointer to a DWInterface structure with allocated and copied username and
+ *   password fields, and a curl handle. If username or password are empty
+ *   strings, PANIC() is called and the program exits.
+ */
 DWInterface *dw_interface_create(const char *username, const char *password) {
   size_t usr_len  = strlen(username);
   size_t pass_len = strlen(password);
@@ -100,37 +172,59 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
   curl_global_init(CURL_GLOBAL_ALL);
 
   // Create curl.
-  dwi->curl = curl_easy_init();
+  dwi->curl_handle = curl_easy_init();
 
   return dwi;
 }
 
-// Public. The goal of this function is to provide the DataWarehouse
-// with a properly formatted JSON file. This function MUST be called
-// first, before inserting/querying data. The function should return
-// 2 uuid's, each 36 bytes long. Maybe we should have UUID's be member
-// variables of the DWInterface struct?
+/*
+ * This function takes a JSON file to upload to the DataWarehouse and generates 2 UUIDs
+ * and storing them in a char array. This function should be called before any data
+ * insertion or query operations.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface struct that contains information about the
+ *        current session.
+ *   json_filepath: a pointer to a FILE object that represents the JSON file.
+ * Return value:
+ *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
+ */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath) {
   UNIMPLEMENTED;
 }
 
-// Public. The goal of this function is to insert new information
-// into the DataWarehouse. Note that it takes a `FILE*` and not a `char*`.
-// This is to allow support for a file located not in the CWD.
+/*
+ * This function inserts new information into the DataWarehouse by sending a POST request
+ * with a JSON file as the body.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface struct that contains information about the
+ *        DataWarehouse connection.
+ *   json_filepath: a pointer to a FILE object that represents the JSON file.
+ * Return value:
+ *   An int value that indicates the status of the insertion operation.
+ *   (0 for success, non-zero for failure)
+ */
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_filepath) {
   UNIMPLEMENTED;
 }
 
-// Public. The goal of this function is to provide it with a `query_string`
-// and it will send it to the DataWarehouse, hopefully getting back a JSON
-// formatted string (char*).
+/*
+ * This function sends a query string to the DataWarehouse and returns a JSON
+ * formatted string as a result.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface struct that contains information about
+ *        the DataWarehouse connection.
+ *   query_string: a pointer to a char array that contains the query string.
+ * Return value:
+ *   A pointer to a char array that contains the JSON formatted string
+ *   returned by the DataWarehouse.
+ */
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
   struct buffer_t buf = buffer_t_create(1024);
-  curl_easy_setopt(dwi->curl, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl, CURLOPT_URL,           query_string); // Using query_string as a placeholder.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           query_string); // Using query_string as a placeholder.
 
-  CURLcode curl_code = curl_easy_perform(dwi->curl);
+  CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 
   if (curl_code != CURLE_OK) {
     fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
@@ -143,13 +237,18 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
   return data;
 }
 
-// Public. This is the last function that should be
-// called by the user. Free()'s up all memory.
+/*
+ * This function frees up all the memory allocated by the DWInterface struct and its fields.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface struct that needs to be destroyed.
+ * Return value:
+ *   None
+ */
 void dw_interface_destroy(DWInterface *dwi) {
   if (!dwi) {
     PANIC(dw_interface_create() must be called first);
   }
-  curl_easy_cleanup(dwi->curl);
+  curl_easy_cleanup(dwi->curl_handle);
   free(dwi->username);
   free(dwi->password);
   free(dwi);

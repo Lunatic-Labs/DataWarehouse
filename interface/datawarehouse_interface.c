@@ -1,13 +1,23 @@
-#include <assert.h> // Could be useful?
+#include <assert.h> // Could be useful.
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <curl/curl.h> // NOTE: To install: sudo apt install libcurl4-openssl-dev
+// NOTE: To install: sudo apt install libcurl4-openssl-dev
+// NOTE: Documentation: https://curl.se/libcurl/c/
+#include <curl/curl.h>
+
 #include "datawarehouse_interface.h"
 
+#define IP_ADDR        "54.174.120.179"
+#define PORT            5000 // Dev port.
+#define HANDSHAKE_ADDR "http://54.174.120.179:5000/api/prepare/"
+#define INSERT_ADDR    "TODO"
+#define QUERY_ADDR     "TODO"
+
 #define UNIMPLEMENTED printf("Unimplemented: %s at line %d\n", __func__, __LINE__)
+#define NOP(x) (void)(x);
 
 /*
  * PANIC: A macro that prints an error message and exits the program with a
@@ -189,7 +199,10 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath) {
+  NOP(dwi);
+  NOP(json_filepath);
   UNIMPLEMENTED;
+  return NULL;
 }
 
 /*
@@ -204,7 +217,10 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_filepath
  *   (0 for success, non-zero for failure)
  */
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_filepath) {
+  NOP(dwi);
+  NOP(json_filepath);
   UNIMPLEMENTED;
+  return 0;
 }
 
 /*

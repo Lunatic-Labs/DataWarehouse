@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -I. -lcurl -Werror -Wextra
+CFLAGS = -I. -std=c11 -Wall -Wextra
+LDFLAGS = -lcurl
 DEPS = datawarehouse_interface.h
 OBJ = main.o datawarehouse_interface.o
 
@@ -7,7 +8,7 @@ OBJ = main.o datawarehouse_interface.o
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 main: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 
 .PHONY: clean
 

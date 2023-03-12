@@ -284,6 +284,8 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        DataWarehouse connection.
+ *   source_uuid: the source uuid that is needed.
+ *   metric_uuid: the metric uuid that is needed.
  *   json_file: a pointer to a FILE object that represents the JSON file.
  * Return value:
  *   An int value that indicates the status of the insertion operation.
@@ -313,11 +315,17 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
 
   NOP(query_string);
 
+  // The code below will curl the url (in this case LOCALHOST_QUERY_URL)
+  // and any information that curl gets is stored in a `char *`. This is
+  // return and the user can do what they want with it.
+
+  UNIMPLEMENTED;
+
   struct buffer_t buf = buffer_t_create(1024);
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_HANDSHAKE_URL); // Replace this.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_QUERY_URL); // Replace this.
 
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 

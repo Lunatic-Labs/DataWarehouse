@@ -14,7 +14,7 @@
 #define IP_ADDR       "54.174.120.179"
 #define PORT           5000                                          // Dev port.
 #define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
-#define INSERT_URL    "TODO"
+#define INSERT_URl    "TODO"
 #define QUERY_URL     "TODO"
 
 #define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
@@ -235,7 +235,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
   *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  LOCALHOST_HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
   // Set the content type header to application/json.
@@ -264,7 +264,6 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
   curl_code = curl_easy_perform(dwi->curl_handle);
-
   if (curl_code != CURLE_OK) {
     fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
             curl_easy_strerror(curl_code));
@@ -296,7 +295,40 @@ int dw_interface_insert_data(const DWInterface *dwi,
                              const char *source_uuid,
                              const char *metric_uuid,
                              FILE *json_file) {
-  NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
+  //NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
+
+  printf("%s\n", source_uuid);
+  printf("%s\n", metric_uuid);
+
+  /*curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
+
+  // Set the content type header to application/json.
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
+
+  // Get the size of the file.
+  fseek(json_file, 0, SEEK_END);
+  file_size = ftell(json_file);
+  rewind(json_file);
+
+  // Get the file data.
+  file_data = malloc(file_size + 1);
+  if (!fread(file_data, 1, file_size, json_file)) {
+    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
+            strerror(errno));
+    PANIC();
+  }
+  file_data[file_size] = '\0';
+  fclose(json_file);
+
+  // Set the request body to the file contents.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
+
+  // Set the request body size to the size of the file.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
+
+  curl_code = curl_easy_perform(dwi->curl_handle);*/
   UNIMPLEMENTED;
   return 0;
 }

@@ -11,9 +11,9 @@
 
 #include "datawarehouse_interface.h"
 
-#define IP_ADDR       "54.174.120.179"
+#define IP_ADDR       "54.159.108.136"
 #define PORT           5000                                          // Dev port.
-#define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
+#define HANDSHAKE_URL "http://54.159.108.136:5000/api/prepare/"
 #define INSERT_URL    "TODO"
 #define QUERY_URL     "TODO"
 
@@ -235,7 +235,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
   *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  LOCALHOST_HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
   // Set the content type header to application/json.
@@ -296,7 +296,7 @@ int dw_interface_insert_data(const DWInterface *dwi,
                              const char *source_uuid,
                              const char *metric_uuid,
                              FILE *json_file) {
-  NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
+
   UNIMPLEMENTED;
   return 0;
 }

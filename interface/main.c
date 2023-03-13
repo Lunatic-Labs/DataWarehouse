@@ -6,19 +6,14 @@
 #define FILEPATH "../../sample.json"
 
 int main(void) {
-  DWInterface *dwi = dw_interface_create("usr", "pass");
+  FILE *fp = fopen(FILEPATH, "r");
 
-  FILE *json_file = fopen(FILEPATH, "r");
+  DWInterface *dwi = dw_interface_create("usr", "pass", ENV_LOCAL, PORT_DEV);
 
-  if (!json_file) {
-    fprintf (stderr, "Could not open %s\n", strerror(errno));
-    return 1;
-  }
+  dw_interface_set_uuids(dwi, "3e497c48-886f-44e6-b7e6-32b6c7b39a8b", "ae02e85a-21d8-41e7-93ab-70b08c47cf7a");
 
-  char **uuids = dw_interface_commit_handshake(dwi, json_file);
-
+  fclose(fp);
   dw_interface_destroy(dwi);
-
   return 0;
 }
 

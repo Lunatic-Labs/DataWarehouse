@@ -13,13 +13,8 @@
 
 #define IP_ADDR       "54.159.108.136"
 #define PORT           5000                                          // Dev port.
-<<<<<<< HEAD
-#define HANDSHAKE_URL "http://54.174.120.179:5000/api/prepare/"
-#define INSERT_URl    "TODO"
-=======
 #define HANDSHAKE_URL "http://54.159.108.136:5000/api/prepare/"
-#define INSERT_URL    "TODO"
->>>>>>> 0d3c0a88c625fc3a4c2f8da6921ef5cb1a5feb1f
+#define INSERT_URl    "TODO"
 #define QUERY_URL     "TODO"
 
 #define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
@@ -300,11 +295,9 @@ int dw_interface_insert_data(const DWInterface *dwi,
                              const char *source_uuid,
                              const char *metric_uuid,
                              FILE *json_file) {
-<<<<<<< HEAD
   //NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
 
-  printf("%s\n", source_uuid);
-  printf("%s\n", metric_uuid);
+
 
   /*curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
@@ -335,9 +328,6 @@ int dw_interface_insert_data(const DWInterface *dwi,
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
   curl_code = curl_easy_perform(dwi->curl_handle);*/
-=======
-
->>>>>>> 0d3c0a88c625fc3a4c2f8da6921ef5cb1a5feb1f
   UNIMPLEMENTED;
   return 0;
 }

@@ -11,6 +11,7 @@
 
 #include "datawarehouse_interface.h"
 
+<<<<<<< HEAD
 #define IP_ADDR       "54.159.108.136"
 #define PORT           5000                                          // Dev port.
 #define HANDSHAKE_URL "http://54.159.108.136:5000/api/prepare/"
@@ -20,12 +21,33 @@
 #define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
 #define LOCALHOST_INSERT_URl    "TODO"                               // For local dev.
 #define LOCALHOST_QUERY_URL     "TODO"                               // For local dev.
+=======
+#define REMOTE_IP_ADDR "44.211.159.159"
+#define LOCAL_IP_ADDR  "127.0.0.1"
+
+#define DEVELOPMENT_PORT ":5000"
+#define STAGING_PORT     ":4000"
+#define PRODUCTION_PORT  ":3000"
+
+#define HANDSHAKE_PATH "/api/prepare/"
+#define INSERT_PATH    "/api/store/"
+#define QUERY_PATH     "/api/query/"
+>>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
 
 #define UUID_LEN 36
 
 #define NOP(x)         (void)(x);
 #define UNIMPLEMENTED  printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
   exit(EXIT_FAILURE);
+
+#define EXISTS(ptr) do {                        \
+  if (!ptr) {                                   \
+    PANIC(null pointer: #ptr);                  \
+  }                                             \
+} while (0)
+
+// Do not touch.
+char *GLOBAL_AUTHORITY;
 
 /*
  * PANIC: A macro that prints an error message and exits the program with a
@@ -43,7 +65,7 @@
 // TODO: Instead of calling PANIC() whenever a fatal error occurs, we should
 //       eventually move to using error codes and have a better way to handle
 //       errors or failures.
-enum ErrorCodes {
+enum ErrorCode {
   OK = 1,
 };
 
@@ -69,7 +91,11 @@ struct buffer_t {
 typedef struct DWInterface {
   char *username;
   char *password;
+  char uuids[2][UUID_LEN + 1];
   CURL *curl_handle;
+  enum ENV env;
+  enum PORT port;
+  int init;
 } DWInterface;
 
 /*
@@ -178,6 +204,78 @@ static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
   return real_size;
 }
 
+/* This function builds an IP address based on the environment and port specified.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface.
+ */
+static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
+
+  // Set the protocol to http.
+  const char *protocol = "http://", *port, *ip_addr;
+
+  // Set the IP address based on the environment.
+  switch (dwi->env) {
+    case ENV_REMOTE:
+      ip_addr = REMOTE_IP_ADDR;
+      break;
+    case ENV_LOCAL:
+      ip_addr = LOCAL_IP_ADDR;
+      break;
+    default:
+      PANIC(invalid environment);
+  }
+
+  // Set the port based on the specified port.
+  switch (dwi->port) {
+    case PORT_DEV:
+      port = DEVELOPMENT_PORT;
+      break;
+    case PORT_STAGING:
+      port = STAGING_PORT;
+      break;
+    case PORT_PROD:
+      port = PRODUCTION_PORT;
+      break;
+    default:
+      PANIC(invalid port);
+  }
+
+  // Calculate the length of the protocol, IP address, and port.
+  size_t protocol_len = strlen(protocol);
+  size_t ip_addr_len  = strlen(ip_addr);
+  size_t port_len     = strlen(port);
+
+  // Calculate the total length of the authority string.
+  size_t total_len = protocol_len + ip_addr_len + port_len + 1;
+  GLOBAL_AUTHORITY = s_malloc(total_len);
+
+  // Initialize the authority string to all '\0'.
+  memset(GLOBAL_AUTHORITY, '\0', total_len);
+
+  // Copy the protocol, IP address, and port into the authority string.
+  strcpy(GLOBAL_AUTHORITY, protocol);
+  strcat(GLOBAL_AUTHORITY, ip_addr);
+  strcat(GLOBAL_AUTHORITY, port);
+}
+
+/*
+ * construct_url: A function that constructs a URL by concatenating a global
+ * authority with a given path.
+ * Parameters:
+ *   path: A string containing the path to be appended to the global authority.
+ * Returns:
+ *   A pointer to a newly allocated string containing the constructed URL. The
+ *   URL is formed by concatenating the global authority (GLOBAL_AUTHORITY) with
+ *   the given path. Memory for the new string is allocated using s_malloc and
+ *   must be freed by the caller.
+ */
+static char *construct_url(const char *path) {
+  char *url = s_malloc(strlen(GLOBAL_AUTHORITY) + strlen(path) + 1);
+  strcpy(url, GLOBAL_AUTHORITY);
+  strcat(url, path);
+  return url;
+}
+
 /*
  * dw_interface_create: A function that creates and initializes a DWInterface
  * structure. It also initializes the libcurl library and creates a curl handle.
@@ -189,7 +287,10 @@ static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
  *   password fields, and a curl handle. If username or password are empty
  *   strings, PANIC() is called and the program exits.
  */
-DWInterface *dw_interface_create(const char *username, const char *password) {
+DWInterface *dw_interface_create(const char *username,
+                                 const char *password,
+                                 enum ENV env,
+                                 enum PORT port) {
   size_t usr_len  = strlen(username);
   size_t pass_len = strlen(password);
 
@@ -211,7 +312,36 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
   // Create curl.
   dwi->curl_handle = curl_easy_init();
 
+  dwi->env  = env;
+  dwi->port = port;
+
+  dwi->uuids[0][0] = '\0';
+  dwi->uuids[1][0] = '\0';
+
+  // Build the GLOBAL_AUTHORITY.
+  build_GLOBAL_AUTHORITY(dwi);
+
+  dwi->init = 1;
+
   return dwi;
+}
+
+void dw_interface_set_uuids(DWInterface *dwi,
+                            const char source_uuid[UUID_LEN],
+                            const char metric_uuid[UUID_LEN]) {
+  if (!dwi->init) {
+    PANIC(DWInterface must be initialized);
+  }
+
+  if (verify_uuid(source_uuid) != 0) {
+    PANIC(invalid source_uuid);
+  }
+  if (verify_uuid(metric_uuid) != 0) {
+    PANIC(invalid metric_uuid);
+  }
+
+  strcpy(dwi->uuids[0], source_uuid);
+  strcpy(dwi->uuids[1], metric_uuid);
 }
 
 /*
@@ -226,16 +356,27 @@ DWInterface *dw_interface_create(const char *username, const char *password) {
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+  if (!dwi->init) {
+    PANIC(DWInterface must be initialized);
+  }
+
+  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+    PANIC(DWInterface uuids must be set);
+  }
+
   char **uuids = NULL, *file_data = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
   CURLcode curl_code;
 
+  // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
+  char *url = construct_url(HANDSHAKE_PATH);
+
   uuids        = s_malloc(sizeof(char *) * 2);
   *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
   *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
   // Set the content type header to application/json.
@@ -255,7 +396,6 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
     PANIC();
   }
   file_data[file_size] = '\0';
-  fclose(json_file);
 
   // Set the request body to the file contents.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
@@ -275,6 +415,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   // TODO: assign UUIDs.
   // TODO: maybe write UUIDs to a file.
 
+  free(url);
   return uuids;
 }
 
@@ -295,6 +436,7 @@ int dw_interface_insert_data(const DWInterface *dwi,
                              const char *source_uuid,
                              const char *metric_uuid,
                              FILE *json_file) {
+<<<<<<< HEAD
   //NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
 
 
@@ -317,18 +459,29 @@ int dw_interface_insert_data(const DWInterface *dwi,
     fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
             strerror(errno));
     PANIC();
+=======
+  if (!dwi->init) {
+    PANIC(DWInterface must be initialized);
+>>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
   }
-  file_data[file_size] = '\0';
-  fclose(json_file);
 
-  // Set the request body to the file contents.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
+  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+    PANIC(DWInterface uuids must be set);
+  }
 
-  // Set the request body size to the size of the file.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
+  NOP(dwi); NOP(source_uuid); NOP(metric_uuid); NOP(json_file);
 
+<<<<<<< HEAD
   curl_code = curl_easy_perform(dwi->curl_handle);*/
+=======
+  // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
+  char *url = construct_url(INSERT_PATH);
+  NOP(url);
+
+>>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
   UNIMPLEMENTED;
+
+  free(url);
   return 0;
 }
 
@@ -345,7 +498,20 @@ int dw_interface_insert_data(const DWInterface *dwi,
  */
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
 
-  NOP(query_string);
+  if (!dwi->init) {
+    PANIC(DWInterface must be initialized. Call dw_interface_create());
+  }
+
+  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+    PANIC(DWInterface uuids must be set);
+  }
+
+  // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
+  char *url = construct_url(QUERY_PATH);
+
+  printf("%s\n", url);
+
+  NOP(query_string); NOP(url);
 
   // The code below will curl the url (in this case LOCALHOST_QUERY_URL)
   // and any information that curl gets is stored in a `char *`. This is
@@ -357,7 +523,7 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_QUERY_URL); // Replace this.
+  /* curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_QUERY_URL); // Replace this. */
 
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 
@@ -369,6 +535,7 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
 
   char *data = buf.data; // Do something with data?
   free(buf.data);
+  free(url);
   return data;
 }
 
@@ -383,6 +550,7 @@ void dw_interface_destroy(DWInterface *dwi) {
   if (!dwi) {
     PANIC(dw_interface_create() must be called first);
   }
+  free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
   free(dwi->username);
   free(dwi->password);

@@ -11,7 +11,7 @@
 
 #include "datawarehouse_interface.h"
 
-#define REMOTE_IP_ADDR "54.159.108.136"
+#define REMOTE_IP_ADDR "44.211.159.159"
 #define LOCAL_IP_ADDR  "127.0.0.1"
 
 #define DEVELOPMENT_PORT ":5000"

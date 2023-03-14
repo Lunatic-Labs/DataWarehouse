@@ -30,7 +30,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file);
 
 // Inserts data into the database. A source uuid and a metric uuid must be provided.
 // If you need these, then perform dw_interface_commit_handshake().
-int dw_interface_insert_data(const DWInterface *dwi, const char *source_uuid, const char *metric_uuid, FILE *json_file);
+int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file);
 
 // Querys tables in the database.
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string);

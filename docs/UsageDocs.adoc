@@ -170,13 +170,13 @@ Supported Operators::
 |`<`
 |`__<`
 |Less than operation
-|`?temperature__<=98.6`
+|`?temperature__\<=98.6`
 
 
 |`=<`
 |`__<<`
 |Less than or equal to
-|`?temperature__<<=98.6`
+|`?temperature__<\<=98.6`
 
 |`=`
 |`__eq`
@@ -217,7 +217,7 @@ Supported Operators::
 These operators can be applied in combination to further filter your query results. 
 
 .Example of combined query operators
-`?limit=100&temperature__>100&volume__<30`
+`?limit=100&temperature\__>100&volume__<30`
 The above query string will filter the table where temperature is greater than 100, and the volume is less than 30, and will return only 100 rows at most. 
 
 To query a column, you can pass in a url_encoded column name, or the metric_uid you were given upon the handshake request. 

@@ -34,7 +34,7 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file);
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file);
 
 // Querys tables in the database.
-char *dw_interface_query_data(const DWInterface *dwi, const char *query_string);
+const char *dw_interface_query_data(const DWInterface *dwi, const char *query_string);
 
 // Call this function if you already have predetermined uuids. If not,
 // you can obtain these uuids through dw_interface_commit_handshake().

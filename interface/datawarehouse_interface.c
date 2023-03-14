@@ -328,7 +328,7 @@ void dw_interface_set_uuids(DWInterface *dwi,
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
   if (verify_uuid(group_uuid) != 0) {
-    PANIC(invalid source_uuid);
+    PANIC(invalid group_uuid);
   }
   if (verify_uuid(source_uuid) != 0) {
     PANIC(invalid source_uuid);
@@ -462,7 +462,7 @@ int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
  */
-char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
+const char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
   if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
@@ -478,24 +478,29 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
   size_t url_len          = strlen(url);
 
   // + 1 for '/' and + 1 for '/' and +1 for '\0'.
-  char *url_uuids_query_string = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
+  char *url_uuids_query_string //         /                                        /  \0
+    = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
 
+  // Start concatenating the strings together to build the final url.
   strcpy(url_uuids_query_string, url);
   strcat(url_uuids_query_string, dwi->uuids[GROUP_UUID]);
   strcat(url_uuids_query_string, "/");
   strcat(url_uuids_query_string, dwi->uuids[SOURCE_UUID]);
   strcat(url_uuids_query_string, "/");
   strcat(url_uuids_query_string, query_string);
-
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
   struct buffer_t buf = buffer_t_create(1024);
 
+  // Set the options for curl.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url_uuids_query_string);
+
+  // Allow redirects.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
 
+  // Start curl.
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 
   if (curl_code != CURLE_OK) {
@@ -504,9 +509,11 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
     PANIC();
   }
 
-  char *data = buf.data;
-  free(buf.data);
+  // We now have the response from the DataWarehouse.
+  const char *data = buf.data;
+
   free(url);
+  free(buf.data);
   free(url_uuids_query_string);
   return data;
 }

@@ -434,16 +434,51 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
+const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
-  NOP(dwi); NOP(json_file);
+  char *file_data = NULL;
+  size_t file_size;
+  struct curl_slist *headers = NULL;
+
+  //NOP(dwi); NOP(json_file); 
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
   NOP(url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
+
+  // Set the content type header to application/json.
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
+
+  // Get the size of the file.
+  fseek(json_file, 0, SEEK_END);
+  file_size = ftell(json_file);
+  rewind(json_file);
+
+  // Get the file data.
+  file_data = malloc(file_size + 1);
+  if (!fread(file_data, 1, file_size, json_file)) 
+  {
+    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n", strerror(errno));
+    PANIC();
+  }
+  file_data[file_size] = '\0';
+
+  struct buffer_t buf = buffer_t_create(1024);
+
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA, &buf);
+
+  // Set the request body to the file contents.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
+
+  // Set the request body size to the size of the file.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
   UNIMPLEMENTED;
 

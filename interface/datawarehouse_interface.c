@@ -343,32 +343,28 @@ void dw_interface_set_uuids(DWInterface *dwi,
 }
 
 /*
- * This function takes a JSON file to upload to the DataWarehouse and generates 2 UUIDs
- * and storing them in a char array. This function should be called before any data
- * insertion or query operations.
+ * This function takes a JSON file to upload to the DataWarehouse and prints the
+ * output into a file called: handshake_information.json. This function should
+ * be called before any data insertion or query operations.
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        current session.
  *   json_file: a pointer to a FILE object that represents the JSON file.
  * Return value:
- *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
+ *   None.
  */
-char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
-  char **uuids = NULL, *file_data = NULL;
+  char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
   CURLcode curl_code;
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
   char *url = construct_url(HANDSHAKE_PATH);
-
-  uuids        = s_malloc(sizeof(char *) * 2);
-  *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
-  *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
@@ -391,6 +387,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   }
   file_data[file_size] = '\0';
 
+  struct buffer_t buf = buffer_t_create(1024);
+
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+
   // Set the request body to the file contents.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
 
@@ -406,11 +407,18 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
 
   curl_slist_free_all(headers);
 
-  // TODO: assign UUIDs.
-  // TODO: maybe write UUIDs to a file.
+  // Write the received information to an output file.
+  FILE *fp = fopen("handshake_information.json", "w");
+  if (!fp) {
+    fprintf(stderr, "ERROR: failed to create and write to file `handshake_information.json`. Reason: %s\n",
+            strerror(errno));
+    PANIC();
+  }
+  fputs(buf.data, fp);
 
+  free(buf.data);
+  fclose(fp);
   free(url);
-  return uuids;
 }
 
 /*
@@ -469,28 +477,24 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
   size_t source_uuid_len  = strlen(dwi->uuids[SOURCE_UUID]);
   size_t url_len          = strlen(url);
 
-  // + 1 for '/' and + 1 for '\0'.
-  char *url_uuids_query_string = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1);
+  // + 1 for '/' and + 1 for '/' and +1 for '\0'.
+  char *url_uuids_query_string = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
 
   strcpy(url_uuids_query_string, url);
   strcat(url_uuids_query_string, dwi->uuids[GROUP_UUID]);
   strcat(url_uuids_query_string, "/");
   strcat(url_uuids_query_string, dwi->uuids[SOURCE_UUID]);
+  strcat(url_uuids_query_string, "/");
   strcat(url_uuids_query_string, query_string);
 
-  printf("%s\n", url_uuids_query_string);
-
-  // The code below will curl the url (in this case LOCALHOST_QUERY_URL)
-  // and any information that curl gets is stored in a `char *`. This is
-  // return and the user can do what they want with it.
-
-  UNIMPLEMENTED;
+  // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
   struct buffer_t buf = buffer_t_create(1024);
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  /* curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_QUERY_URL); // Replace this. */
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url_uuids_query_string);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
 
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 
@@ -500,9 +504,10 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
     PANIC();
   }
 
-  char *data = buf.data; // Do something with data?
+  char *data = buf.data;
   free(buf.data);
   free(url);
+  free(url_uuids_query_string);
   return data;
 }
 

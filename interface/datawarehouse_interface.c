@@ -1,4 +1,5 @@
 #include <assert.h> // Could be useful.
+#include <stdbool.h>
 #include <errno.h>
 #include <regex.h>
 #include <stdio.h>
@@ -21,6 +22,10 @@
 #define HANDSHAKE_PATH "/api/prepare/"
 #define INSERT_PATH    "/api/store/"
 #define QUERY_PATH     "/api/query/"
+
+#define GROUP_UUID  0
+#define SOURCE_UUID 1
+#define METRIC_UUID 2
 
 #define UUID_LEN 36
 
@@ -80,7 +85,7 @@ typedef struct DWInterface {
   char *username;
   char *password;
   CURL *curl_handle;
-  char uuids[2][UUID_LEN + 1];
+  char uuids[3][UUID_LEN + 1];
   enum ENV env;
   enum PORT port;
 } DWInterface;
@@ -143,6 +148,12 @@ static int verify_uuid(const char *uuid) {
           | REG_NOSUB
           | REG_ICASE);
   return regexec(&regex, uuid, (size_t)0, NULL, (int)0);
+}
+
+static bool verify_query_string(const char *query_string) {
+  NOP(query_string);
+  UNIMPLEMENTED;
+  return true;
 }
 
 /*
@@ -304,6 +315,7 @@ DWInterface *dw_interface_create(const char *username,
 
   dwi->uuids[0][0] = '\0';
   dwi->uuids[1][0] = '\0';
+  dwi->uuids[2][0] = '\0';
 
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
@@ -312,8 +324,12 @@ DWInterface *dw_interface_create(const char *username,
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
+                            const char group_uuid[UUID_LEN],
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
+  if (verify_uuid(group_uuid) != 0) {
+    PANIC(invalid group_uuid);
+  }
   if (verify_uuid(source_uuid) != 0) {
     PANIC(invalid source_uuid);
   }
@@ -321,37 +337,34 @@ void dw_interface_set_uuids(DWInterface *dwi,
     PANIC(invalid metric_uuid);
   }
 
-  strcpy(dwi->uuids[0], source_uuid);
-  strcpy(dwi->uuids[1], metric_uuid);
+  strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
+  strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
+  strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
 
 /*
- * This function takes a JSON file to upload to the DataWarehouse and generates 2 UUIDs
- * and storing them in a char array. This function should be called before any data
- * insertion or query operations.
+ * This function takes a JSON file to upload to the DataWarehouse and prints the
+ * output into a file called: handshake_information.json. This function should
+ * be called before any data insertion or query operations.
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        current session.
  *   json_file: a pointer to a FILE object that represents the JSON file.
  * Return value:
- *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
+ *   None.
  */
-char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
-  char **uuids = NULL, *file_data = NULL;
+  char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
   CURLcode curl_code;
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
   char *url = construct_url(HANDSHAKE_PATH);
-
-  uuids        = s_malloc(sizeof(char *) * 2);
-  *(uuids + 0) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
-  *(uuids + 1) = s_malloc(sizeof(char)   * (UUID_LEN + 1));
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
@@ -374,6 +387,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   }
   file_data[file_size] = '\0';
 
+  struct buffer_t buf = buffer_t_create(1024);
+
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+
   // Set the request body to the file contents.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
 
@@ -389,11 +407,18 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
 
   curl_slist_free_all(headers);
 
-  // TODO: assign UUIDs.
-  // TODO: maybe write UUIDs to a file.
+  // Write the received information to an output file.
+  FILE *fp = fopen("handshake_information.json", "w");
+  if (!fp) {
+    fprintf(stderr, "ERROR: failed to create and write to file `handshake_information.json`. Reason: %s\n",
+            strerror(errno));
+    PANIC();
+  }
+  fputs(buf.data, fp);
 
+  free(buf.data);
+  fclose(fp);
   free(url);
-  return uuids;
 }
 
 /*
@@ -410,11 +435,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   (0 for success, non-zero for failure)
  */
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
-  NOP(dwi); NOP(source_uuid); NOP(metric_uuid); NOP(json_file);
+  NOP(dwi); NOP(json_file);
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
@@ -437,30 +462,45 @@ int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
  */
-char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+const char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
+
+  // TODO: verify query string here.
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
   char *url = construct_url(QUERY_PATH);
 
-  printf("%s\n", url);
+  size_t query_string_len = strlen(query_string);
+  size_t group_uuid_len   = strlen(dwi->uuids[GROUP_UUID]);
+  size_t source_uuid_len  = strlen(dwi->uuids[SOURCE_UUID]);
+  size_t url_len          = strlen(url);
 
-  NOP(query_string); NOP(url);
+  // + 1 for '/' and + 1 for '/' and +1 for '\0'.
+  char *url_uuids_query_string //         /                                        /  \0
+    = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
 
-  // The code below will curl the url (in this case LOCALHOST_QUERY_URL)
-  // and any information that curl gets is stored in a `char *`. This is
-  // return and the user can do what they want with it.
-
-  UNIMPLEMENTED;
+  // Start concatenating the strings together to build the final url.
+  strcpy(url_uuids_query_string, url);
+  strcat(url_uuids_query_string, dwi->uuids[GROUP_UUID]);
+  strcat(url_uuids_query_string, "/");
+  strcat(url_uuids_query_string, dwi->uuids[SOURCE_UUID]);
+  strcat(url_uuids_query_string, "/");
+  strcat(url_uuids_query_string, query_string);
+  // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
   struct buffer_t buf = buffer_t_create(1024);
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  /* curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           LOCALHOST_QUERY_URL); // Replace this. */
+  // Set the options for curl.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url_uuids_query_string);
 
+  // Allow redirects.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
+
+  // Start curl.
   CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
 
   if (curl_code != CURLE_OK) {
@@ -469,9 +509,12 @@ char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_strin
     PANIC();
   }
 
-  char *data = buf.data; // Do something with data?
-  free(buf.data);
+  // We now have the response from the DataWarehouse.
+  const char *data = buf.data;
+
   free(url);
+  free(buf.data);
+  free(url_uuids_query_string);
   return data;
 }
 

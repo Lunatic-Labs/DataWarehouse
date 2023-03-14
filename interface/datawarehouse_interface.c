@@ -11,17 +11,6 @@
 
 #include "datawarehouse_interface.h"
 
-<<<<<<< HEAD
-#define IP_ADDR       "54.159.108.136"
-#define PORT           5000                                          // Dev port.
-#define HANDSHAKE_URL "http://54.159.108.136:5000/api/prepare/"
-#define INSERT_URl    "TODO"
-#define QUERY_URL     "TODO"
-
-#define LOCALHOST_HANDSHAKE_URL "http://127.0.0.1:5000/api/prepare/" // For local dev.
-#define LOCALHOST_INSERT_URl    "TODO"                               // For local dev.
-#define LOCALHOST_QUERY_URL     "TODO"                               // For local dev.
-=======
 #define REMOTE_IP_ADDR "44.211.159.159"
 #define LOCAL_IP_ADDR  "127.0.0.1"
 
@@ -32,7 +21,6 @@
 #define HANDSHAKE_PATH "/api/prepare/"
 #define INSERT_PATH    "/api/store/"
 #define QUERY_PATH     "/api/query/"
->>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
 
 #define UUID_LEN 36
 
@@ -436,33 +424,8 @@ int dw_interface_insert_data(const DWInterface *dwi,
                              const char *source_uuid,
                              const char *metric_uuid,
                              FILE *json_file) {
-<<<<<<< HEAD
-  //NOP(dwi); NOP(json_file); NOP(source_uuid); NOP(metric_uuid);
-
-
-
-  /*curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  HANDSHAKE_URL);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
-
-  // Set the content type header to application/json.
-  headers = curl_slist_append(headers, "Content-Type: application/json");
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
-
-  // Get the size of the file.
-  fseek(json_file, 0, SEEK_END);
-  file_size = ftell(json_file);
-  rewind(json_file);
-
-  // Get the file data.
-  file_data = malloc(file_size + 1);
-  if (!fread(file_data, 1, file_size, json_file)) {
-    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
-            strerror(errno));
-    PANIC();
-=======
   if (!dwi->init) {
     PANIC(DWInterface must be initialized);
->>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
   }
 
   if (!dwi->uuids[0] || !dwi->uuids[1]) {
@@ -471,14 +434,10 @@ int dw_interface_insert_data(const DWInterface *dwi,
 
   NOP(dwi); NOP(source_uuid); NOP(metric_uuid); NOP(json_file);
 
-<<<<<<< HEAD
-  curl_code = curl_easy_perform(dwi->curl_handle);*/
-=======
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
   NOP(url);
 
->>>>>>> d3231386db3c3c9d8f38539258e01319bb26db16
   UNIMPLEMENTED;
 
   free(url);

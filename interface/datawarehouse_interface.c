@@ -79,11 +79,10 @@ struct buffer_t {
 typedef struct DWInterface {
   char *username;
   char *password;
-  char uuids[2][UUID_LEN + 1];
   CURL *curl_handle;
+  char uuids[2][UUID_LEN + 1];
   enum ENV env;
   enum PORT port;
-  int init;
 } DWInterface;
 
 /*
@@ -309,18 +308,12 @@ DWInterface *dw_interface_create(const char *username,
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
 
-  dwi->init = 1;
-
   return dwi;
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
-  if (!dwi->init) {
-    PANIC(DWInterface must be initialized);
-  }
-
   if (verify_uuid(source_uuid) != 0) {
     PANIC(invalid source_uuid);
   }
@@ -344,10 +337,6 @@ void dw_interface_set_uuids(DWInterface *dwi,
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->init) {
-    PANIC(DWInterface must be initialized);
-  }
-
   if (!dwi->uuids[0] || !dwi->uuids[1]) {
     PANIC(DWInterface uuids must be set);
   }
@@ -420,14 +409,7 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-int dw_interface_insert_data(const DWInterface *dwi,
-                             const char *source_uuid,
-                             const char *metric_uuid,
-                             FILE *json_file) {
-  if (!dwi->init) {
-    PANIC(DWInterface must be initialized);
-  }
-
+int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   if (!dwi->uuids[0] || !dwi->uuids[1]) {
     PANIC(DWInterface uuids must be set);
   }
@@ -456,11 +438,6 @@ int dw_interface_insert_data(const DWInterface *dwi,
  *   returned by the DataWarehouse.
  */
 char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
-
-  if (!dwi->init) {
-    PANIC(DWInterface must be initialized. Call dw_interface_create());
-  }
-
   if (!dwi->uuids[0] || !dwi->uuids[1]) {
     PANIC(DWInterface uuids must be set);
   }

@@ -33,11 +33,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file);
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file);
 
 // Querys tables in the database.
-char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string);
+char *dw_interface_query_data(const DWInterface *dwi, const char *query_string);
 
 // Call this function if you already have predetermined uuids. If not,
 // you can obtain these uuids through dw_interface_commit_handshake().
-void dw_interface_set_uuids(DWInterface *dwi, const char source_uuid[36], const char metric_uuid[36]);
+void dw_interface_set_uuids(DWInterface *dwi, const char group_uuid[36], const char source_uuid[36], const char metric_uuid[36]);
 
 // Free()'s all memory allocated.
 void dw_interface_destroy(DWInterface *dwi);

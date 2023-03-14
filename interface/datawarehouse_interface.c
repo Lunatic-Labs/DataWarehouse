@@ -1,4 +1,5 @@
 #include <assert.h> // Could be useful.
+#include <stdbool.h>
 #include <errno.h>
 #include <regex.h>
 #include <stdio.h>
@@ -21,6 +22,10 @@
 #define HANDSHAKE_PATH "/api/prepare/"
 #define INSERT_PATH    "/api/store/"
 #define QUERY_PATH     "/api/query/"
+
+#define GROUP_UUID  0
+#define SOURCE_UUID 1
+#define METRIC_UUID 2
 
 #define UUID_LEN 36
 
@@ -80,7 +85,7 @@ typedef struct DWInterface {
   char *username;
   char *password;
   CURL *curl_handle;
-  char uuids[2][UUID_LEN + 1];
+  char uuids[3][UUID_LEN + 1];
   enum ENV env;
   enum PORT port;
 } DWInterface;
@@ -143,6 +148,12 @@ static int verify_uuid(const char *uuid) {
           | REG_NOSUB
           | REG_ICASE);
   return regexec(&regex, uuid, (size_t)0, NULL, (int)0);
+}
+
+static bool verify_query_string(const char *query_string) {
+  NOP(query_string);
+  UNIMPLEMENTED;
+  return true;
 }
 
 /*
@@ -304,6 +315,7 @@ DWInterface *dw_interface_create(const char *username,
 
   dwi->uuids[0][0] = '\0';
   dwi->uuids[1][0] = '\0';
+  dwi->uuids[2][0] = '\0';
 
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
@@ -312,8 +324,12 @@ DWInterface *dw_interface_create(const char *username,
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
+                            const char group_uuid[UUID_LEN],
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
+  if (verify_uuid(group_uuid) != 0) {
+    PANIC(invalid source_uuid);
+  }
   if (verify_uuid(source_uuid) != 0) {
     PANIC(invalid source_uuid);
   }
@@ -321,8 +337,9 @@ void dw_interface_set_uuids(DWInterface *dwi,
     PANIC(invalid metric_uuid);
   }
 
-  strcpy(dwi->uuids[0], source_uuid);
-  strcpy(dwi->uuids[1], metric_uuid);
+  strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
+  strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
+  strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
 
 /*
@@ -337,7 +354,7 @@ void dw_interface_set_uuids(DWInterface *dwi,
  *   A pointer to a char array that contains two UUIDs, each 36 bytes long.
  */
 char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
@@ -410,11 +427,11 @@ char **dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   (0 for success, non-zero for failure)
  */
 int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
 
-  NOP(dwi); NOP(source_uuid); NOP(metric_uuid); NOP(json_file);
+  NOP(dwi); NOP(json_file);
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
@@ -437,17 +454,31 @@ int dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
  */
-char *dw_interface_retrieve_data(const DWInterface *dwi, const char *query_string) {
-  if (!dwi->uuids[0] || !dwi->uuids[1]) {
+char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
+  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
     PANIC(DWInterface uuids must be set);
   }
+
+  // TODO: verify query string here.
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
   char *url = construct_url(QUERY_PATH);
 
-  printf("%s\n", url);
+  size_t query_string_len = strlen(query_string);
+  size_t group_uuid_len   = strlen(dwi->uuids[GROUP_UUID]);
+  size_t source_uuid_len  = strlen(dwi->uuids[SOURCE_UUID]);
+  size_t url_len          = strlen(url);
 
-  NOP(query_string); NOP(url);
+  // + 1 for '/' and + 1 for '\0'.
+  char *url_uuids_query_string = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1);
+
+  strcpy(url_uuids_query_string, url);
+  strcat(url_uuids_query_string, dwi->uuids[GROUP_UUID]);
+  strcat(url_uuids_query_string, "/");
+  strcat(url_uuids_query_string, dwi->uuids[SOURCE_UUID]);
+  strcat(url_uuids_query_string, query_string);
+
+  printf("%s\n", url_uuids_query_string);
 
   // The code below will curl the url (in this case LOCALHOST_QUERY_URL)
   // and any information that curl gets is stored in a `char *`. This is

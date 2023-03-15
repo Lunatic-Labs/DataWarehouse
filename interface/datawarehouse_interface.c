@@ -365,8 +365,6 @@ void dw_interface_set_uuids(DWInterface *dwi,
  *   None.
  */
 void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  UUIDS_PRESENT(dwi);
-
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
@@ -449,6 +447,7 @@ const char *dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   size_t file_size;
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
+  CURLcode curl_code;
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);

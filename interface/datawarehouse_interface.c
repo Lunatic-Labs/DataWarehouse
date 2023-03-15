@@ -1,55 +1,66 @@
-#include <assert.h> // Could be useful.
-#include <stdbool.h>
-#include <errno.h>
-#include <regex.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <assert.h>  // Debugging. Should not be in release.
+#include <stdbool.h> // Instead of ints for bools.
+#include <errno.h>   // Error handling.
+#include <regex.h>   // For verifying UUIDS are correct based off of regular expression.
+#include <stdio.h>   // I/O.
+#include <stdlib.h>  // Standard library.
+#include <string.h>  // Functions for string manipulation.
 
 // NOTE: To install: sudo apt install libcurl4-openssl-dev
 // NOTE: Documentation: https://curl.se/libcurl/c/
-#include <curl/curl.h>
+#include <curl/curl.h> // Communication with the DataWarehouse.
 
+// Access to function definitions.
 #include "datawarehouse_interface.h"
 
+// IP address for the EC2 instance.
 #define REMOTE_IP_ADDR "44.211.159.159"
+
+// IP address for localhost.
 #define LOCAL_IP_ADDR  "127.0.0.1"
 
+// Different ports for different databases.
+// 5000 -> Development (aka dw_dev)
+// 4000 -> Staging     (aka dw_staging)
+// 3000 -> Production  (aka dw_prod)
 #define DEVELOPMENT_PORT ":5000"
 #define STAGING_PORT     ":4000"
 #define PRODUCTION_PORT  ":3000"
 
+// Paths for different controllers.
 #define HANDSHAKE_PATH "/api/prepare/"
 #define INSERT_PATH    "/api/store/"
 #define QUERY_PATH     "/api/query/"
 
+// Less confusion when accessing DWInterface->uuids.
 #define GROUP_UUID  0
 #define SOURCE_UUID 1
 #define METRIC_UUID 2
 
+// Length of UUIDs.
 #define UUID_LEN 36
 
-#define NOP(x)         (void)(x);
+// `No Operation`. Use to surpress `unused variable` warnings.
+#define NOP(x) (void)(x);
+
+// Put in functions to crash at unimplemented features.
 #define UNIMPLEMENTED  printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
   exit(EXIT_FAILURE);
 
-#define EXISTS(ptr) do {                        \
-  if (!ptr) {                                   \
-    PANIC(null pointer: #ptr);                  \
-  }                                             \
-} while (0)
+// Check if the UUIDs have been set.
+#define UUIDS_PRESENT(dwi)                      \
+  do {                                          \
+    for (int i = 0; i < 3; i++) {               \
+      if (dwi->uuids[i][0] == '\0') {           \
+        PANIC(uuids must be set);               \
+      }                                         \
+    }                                           \
+  } while (0)
 
-// Do not touch.
+// The `authority` is the part of the url that is: http://ip_addr:port/
 char *GLOBAL_AUTHORITY;
 
-/*
- * PANIC: A macro that prints an error message and exits the program with a
- * failure status. It takes a message as an argument and uses the stringification
- * operator (#) to convert it to a string literal. It also uses the predefined
- * macros __FILE__ and __LINE__ to indicate the source file and line number where
- * the panic occurred. The do-while(0) construct ensures that the macro behaves
- * like a single statement and avoids dangling else problems.
- */
+// Our current way of handling errors. This will print an error message and crash.
 #define PANIC(msg) do {                                              \
   fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__); \
   exit(EXIT_FAILURE);                                                \
@@ -354,9 +365,7 @@ void dw_interface_set_uuids(DWInterface *dwi,
  *   None.
  */
 void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
-    PANIC(DWInterface uuids must be set);
-  }
+  UUIDS_PRESENT(dwi);
 
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
@@ -434,20 +443,16 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
-  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
-    PANIC(DWInterface uuids must be set);
-  }
+const char *dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
+  UUIDS_PRESENT(dwi);
 
-  char *file_data = NULL;
   size_t file_size;
+  char *file_data            = NULL;
   struct curl_slist *headers = NULL;
-
-  //NOP(dwi); NOP(json_file); 
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
-  NOP(url);
+
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
@@ -462,9 +467,9 @@ const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
 
   // Get the file data.
   file_data = malloc(file_size + 1);
-  if (!fread(file_data, 1, file_size, json_file)) 
-  {
-    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n", strerror(errno));
+  if (!fread(file_data, 1, file_size, json_file)) {
+    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
+            strerror(errno));
     PANIC();
   }
   file_data[file_size] = '\0';
@@ -472,7 +477,7 @@ const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   struct buffer_t buf = buffer_t_create(1024);
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA, &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
 
   // Set the request body to the file contents.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
@@ -480,8 +485,15 @@ const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   // Set the request body size to the size of the file.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
-  UNIMPLEMENTED;
+  curl_code = curl_easy_perform(dwi->curl_handle);
+  if (curl_code != CURLE_OK) {
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(curl_code));
+    PANIC();
+  }
 
+  curl_slist_free_all(headers);
+  free(buf.data);
   free(url);
   return 0;
 }
@@ -498,9 +510,7 @@ const char* dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   returned by the DataWarehouse.
  */
 const char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
-  if (!dwi->uuids[GROUP_UUID] || !dwi->uuids[SOURCE_UUID] || !dwi->uuids[METRIC_UUID]) {
-    PANIC(DWInterface uuids must be set);
-  }
+  UUIDS_PRESENT(dwi);
 
   // TODO: verify query string here.
 
@@ -570,4 +580,3 @@ void dw_interface_destroy(DWInterface *dwi) {
   free(dwi->password);
   free(dwi);
 }
-

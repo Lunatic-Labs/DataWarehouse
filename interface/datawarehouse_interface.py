@@ -1,5 +1,7 @@
 import os
-import pycurl
+import pycurl       # \
+import urllib       #  > for PycURL functionality
+import urlparse     # /
 import sys
 
   
@@ -48,19 +50,55 @@ def dw_interface_set_uuids(DWInterface *dwi,
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
   if (!dwi->init) {
-    PANIC(DWInterface must be initialized);
+    PANIC('DWInterface must be initialized');
   }
 
   if (verify_uuid(source_uuid) != 0) {
-    PANIC(invalid source_uuid);
+    PANIC('invalid source_uuid');
   }
   if (verify_uuid(metric_uuid) != 0) {
-    PANIC(invalid metric_uuid);
+    PANIC('invalid metric_uuid');
   }
 
-  strcpy(dwi->uuids[0], source_uuid);
-  strcpy(dwi->uuids[1], metric_uuid);
+  strcpy(dwi->uuids[0], source_uuid)
+  strcpy(dwi->uuids[1], metric_uuid)
 }
+
+#post_request() is called within commit_handshake() and insert_data().
+#This seems to be where the gruntwork of POSTing using PycURL happens.
+post_request(dwi, url, json_file)
+{
+    c = pycurl.Curl()
+    c.setopt(c.URL, url)
+
+    #Set the content type header to application/json.
+    c.setopt(c.HTTPPOST, [
+    ('fileupload', (
+        c.FORM_BUFFER, json_file,
+        c.FORM_CONTENTTYPE, 'Content-Type: application/json',
+    )),
+    ])
+
+    #Get the file data and set the request body to these contents.
+    try
+        file_data = open(json_file, "r")
+    except IOError
+        PANIC('Post_request() failed to read file contents')
+        exit(1)
+    c.setopt(c.POSTFIELDS, urlencode(file_data.read()))    #data must be urlencoded for PycURL
+
+    #get the size of the file and set the request body size to match.
+    json_file.seek(0, os.SEEK_END)
+    file_size = json_file.tell()
+    c.setopt(c.POSTFIELDSIZE, file_size)
+
+    c.perform()
+    c.close()
+    file_data.close()
+
+    #NEED TO: assign and return a response? What is it, and why are we returning it?
+}
+
 #commit_handshake() takes a JSON file to upload to the DataWarehouse and generates 2 UUIDs
 #   and stores them in a char array. This function should be called before any data
 #   insertion or query operations.
@@ -92,12 +130,18 @@ def dw_interface_commit_handshake(dwi,json_file):
 #   (0 for success, non-zero for failure)
 def dw_interface_insert_data(dwi, source_uuid, metric_uuid, json_file):
     UNIMPLEMENTED("insert_data()")
+    #construct URL
+
+    #Perform a POST request.
+    post_request(dwi, url, json_file)
+ 
+    
 
 #retrieve_data() sends a query string to the DataWarehouse and returns a JSON-
 #   formatted string as a result.
 #Parameters:
 #   dwi: a DWInterface struct that contains information about the DataWarehouse connection.
-#   query_string: a pointer to a char array that contains the query string.
+#   query_string: a string containing the query string?
 #Return value:
 #   A pointer to a char array that contains the JSON formatted string returned by the DataWarehouse.
 

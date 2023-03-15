@@ -353,25 +353,11 @@ void dw_interface_set_uuids(DWInterface *dwi,
   strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
 
-/*
- * This function takes a JSON file to upload to the DataWarehouse and prints the
- * output into a file called: handshake_information.json. This function should
- * be called before any data insertion or query operations.
- * Parameters:
- *   dwi: a pointer to a DWInterface struct that contains information about the
- *        current session.
- *   json_file: a pointer to a FILE object that represents the JSON file.
- * Return value:
- *   None.
- */
-void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+static const char *post_request(const DWInterface *dwi, const char *url, FILE *json_file) {
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
   CURLcode curl_code;
-
-  // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
-  char *url = construct_url(HANDSHAKE_PATH);
 
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
@@ -414,6 +400,58 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
 
   curl_slist_free_all(headers);
 
+  char *response = s_malloc(buf.size);
+  memcpy(response, buf.data, buf.size);
+
+  free(buf.data);
+  return response;
+}
+
+const char *get_request(const DWInterface *dwi, const char *url) {
+  struct buffer_t buf = buffer_t_create(1024);
+
+  // Set the options for curl.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url);
+
+  // Allow redirects.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
+
+  // Start curl.
+  CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
+
+  if (curl_code != CURLE_OK) {
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(curl_code));
+    PANIC();
+  }
+
+  // We now have the response from the DataWarehouse.
+  const char *response = buf.data;
+  free(buf.data);
+  return response;
+}
+
+/*
+ * This function takes a JSON file to upload to the DataWarehouse and prints the
+ * output into a file called: handshake_information.json. This function should
+ * be called before any data insertion or query operations.
+ * Parameters:
+ *   dwi: a pointer to a DWInterface struct that contains information about the
+ *        current session.
+ *   json_file: a pointer to a FILE object that represents the JSON file.
+ * Return value:
+ *   None.
+ */
+void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+
+  // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
+  char *url = construct_url(HANDSHAKE_PATH);
+
+  // Perform a POST request.
+  const char *response = post_request(dwi, url, json_file);
+
   // Write the received information to an output file.
   FILE *fp = fopen("handshake_information.json", "w");
   if (!fp) {
@@ -421,9 +459,8 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
             strerror(errno));
     PANIC();
   }
-  fputs(buf.data, fp);
+  fputs(response, fp);
 
-  free(buf.data);
   fclose(fp);
   free(url);
 }
@@ -444,55 +481,12 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
 const char *dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   UUIDS_PRESENT(dwi);
 
-  size_t file_size;
-  char *file_data            = NULL;
-  struct curl_slist *headers = NULL;
-  CURLcode curl_code;
-
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
 
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
+  // Perform a POST request.
+  post_request(dwi, url, json_file);
 
-  // Set the content type header to application/json.
-  headers = curl_slist_append(headers, "Content-Type: application/json");
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
-
-  // Get the size of the file.
-  fseek(json_file, 0, SEEK_END);
-  file_size = ftell(json_file);
-  rewind(json_file);
-
-  // Get the file data.
-  file_data = malloc(file_size + 1);
-  if (!fread(file_data, 1, file_size, json_file)) {
-    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
-            strerror(errno));
-    PANIC();
-  }
-  file_data[file_size] = '\0';
-
-  struct buffer_t buf = buffer_t_create(1024);
-
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-
-  // Set the request body to the file contents.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
-
-  // Set the request body size to the size of the file.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
-
-  curl_code = curl_easy_perform(dwi->curl_handle);
-  if (curl_code != CURLE_OK) {
-    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
-            curl_easy_strerror(curl_code));
-    PANIC();
-  }
-
-  curl_slist_free_all(headers);
-  free(buf.data);
   free(url);
   return 0;
 }
@@ -534,32 +528,11 @@ const char *dw_interface_query_data(const DWInterface *dwi, const char *query_st
   strcat(url_uuids_query_string, query_string);
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
-  struct buffer_t buf = buffer_t_create(1024);
-
-  // Set the options for curl.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url_uuids_query_string);
-
-  // Allow redirects.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-
-  // Start curl.
-  CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
-
-  if (curl_code != CURLE_OK) {
-    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
-            curl_easy_strerror(curl_code));
-    PANIC();
-  }
-
-  // We now have the response from the DataWarehouse.
-  const char *data = buf.data;
+  const char *request = get_request(dwi, url_uuids_query_string);
 
   free(url);
-  free(buf.data);
   free(url_uuids_query_string);
-  return data;
+  return request;
 }
 
 /*

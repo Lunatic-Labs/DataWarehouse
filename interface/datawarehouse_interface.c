@@ -478,9 +478,7 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   An int value that indicates the status of the insertion operation.
  *   (0 for success, non-zero for failure)
  */
-const char *dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
-  UUIDS_PRESENT(dwi);
-
+void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
 
@@ -488,7 +486,6 @@ const char *dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   post_request(dwi, url, json_file);
 
   free(url);
-  return 0;
 }
 
 /*

@@ -1,11 +1,15 @@
 import os
-import pycurl       # \
-import urllib       #  > for PycURL functionality
-import urlparse     # /
-import sys
+# import urllib       # This is most likely not needed, but idk.
+# import urlparse     # This is most likely not needed, but idk.
+# import urllib.parse # This is most likely not needed, but idk.
+import pycurl
+from io import BytesIO
+import certifi
 
-class DWInterface(object):
-    remote_ip_address = "44.211.159.159"
+# Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
+
+class DWInterface:
+    remote_ip_address = "44.204.92.26"
     local_ip_address = "127.0.0.1"
 
     development_port = 5000
@@ -21,6 +25,8 @@ class DWInterface(object):
         self.__source_uuid = source_uuid
         self.__metric_uuid = metric_uuid
 
+    # Private Functions.
+
     def __POSTRequest(self, url, json_file):
         '''
         This function should not return anything.
@@ -29,9 +35,28 @@ class DWInterface(object):
 
     def __GETRequest(self, url):
         '''
-        This function should return a string.
+        This function should return a string that is the response from the server.
         '''
-        pass
+        # Create a buffer to recieve data.
+
+        buf = BytesIO()
+        # Create CURL handle.
+        curl_handle = pycurl.Curl()
+
+        # Set CURL options.
+        curl_handle.setopt(curl_handle.URL, url)
+        curl_handle.setopt(curl_handle.WRITEDATA, buf)
+        curl_handle.setopt(curl_handle.CAINFO, certifi.where())
+
+        # Perform CURL and cleanup.
+        curl_handle.perform()
+        curl_handle.close()
+
+        # Get the response from the buffer and decode.
+        body = buf.getvalue()
+        return body.decode('iso-8859-1') # TODO: Need to find out the encoding from server.
+
+    # Public Functions.
 
     def commitHandshake(self, handshake_json):
         pass
@@ -46,154 +71,5 @@ class DWInterface(object):
         pass
 
 if __name__ == "__main__": # Use this for running code, testing, debugging, etc.
-    dwi = DWInterface("usr", "pass")
+    dw = DWInterface("usr", "pass")
 
-
-# NOTE: So, I'm not sure what's going on beneath this line.
-#       Our format for this is OOP, not procedural.
-#       Define any private variables or functions with `__`.
-
-#PANIC: A macro that prints an error message and exits the program with a
-  #failure status. It takes a message as an argument and uses the stringification
-  #It also uses the predefined macros __FILE__ and __LINE__ to indicate the source
-  #file and line number where the panic occurred. The do-while(0) construct ensures
-  #that the macro behaves like a single statement and avoids dangling else problems.
-def PANIC(msg) :
-    print("Panic: %s at %s:%d\n" % (msg, __file__, LINE()), file=sys.stderr)
-    exit(1)
-
-#UNIMPLEMENTED: A thing C-team had. Assuming it's for testing purposes?
-#Using as a stand-in for WIP functions
-def UNIMPLEMENTED(func) :
-    print("Unimplemented: %s at line %d\n" % (func, sys._getframe(1).f_lineno)); \
-    exit(1);
-
-#Start constructor, destructor, and other listed functions down here.
-
-#dw_interface_create() creates and initializes a DWInterface
-#   structure. It also initializes the libcurl library and creates a curl handle.
-#Parameters:
-#   username: A string containing the username for the DWInterface.
-#   password: A string containing the password for the DWInterface.
-#   env: ?
-#   port: ?
-#Returns:
-#   A pointer to a DWInterface structure with allocated and copied username and
-#       password fields, and a curl handle. If username or password are empty
-#       strings, PANIC() is called and the program exits.
-
-def dw_interface_create(username, password, env, port):
-    UNIMPLEMENTED("create()")
-
-#Set_UUIDs() seems to be essential for the UUIDs used throughout the other functions.
-#For now, it's copied over directly from the C-team code.
-# def dw_interface_set_uuids(DWInterface *dwi,
-#                             const char source_uuid[UUID_LEN],
-#                             const char metric_uuid[UUID_LEN]) {
-#   if (!dwi->init) {
-#     PANIC('DWInterface must be initialized');
-#   }
-
-#   if (verify_uuid(source_uuid) != 0) {
-#     PANIC('invalid source_uuid');
-#   }
-#   if (verify_uuid(metric_uuid) != 0) {
-#     PANIC('invalid metric_uuid');
-#   }
-
-#   strcpy(dwi->uuids[0], source_uuid)
-#   strcpy(dwi->uuids[1], metric_uuid)
-# }
-
-#post_request() is called within commit_handshake() and insert_data().
-#This seems to be where the gruntwork of POSTing using PycURL happens.
-# post_request(dwi, url, json_file)
-# {
-#     c = pycurl.Curl()
-#     c.setopt(c.URL, url)
-
-#     #Set the content type header to application/json.
-#     c.setopt(c.HTTPPOST, [
-#     ('fileupload', (
-#         c.FORM_BUFFER, json_file,
-#         c.FORM_CONTENTTYPE, 'Content-Type: application/json',
-#     )),
-#     ])
-
-#     #Get the file data and set the request body to these contents.
-#     try
-#         file_data = open(json_file, "r")
-#     except IOError
-#         PANIC('Post_request() failed to read file contents')
-#         exit(1)
-#     c.setopt(c.POSTFIELDS, urlencode(file_data.read()))    #data must be urlencoded for PycURL
-
-#     #get the size of the file and set the request body size to match.
-#     json_file.seek(0, os.SEEK_END)
-#     file_size = json_file.tell()
-#     c.setopt(c.POSTFIELDSIZE, file_size)
-
-#     c.perform()
-#     c.close()
-#     file_data.close()
-
-#     #NEED TO: assign and return a response? What is it, and why are we returning it?
-# }
-
-#commit_handshake() takes a JSON file to upload to the DataWarehouse and generates 2 UUIDs
-#   and stores them in a char array. This function should be called before any data
-#   insertion or query operations.
-#Parameters:
-#   dwi: a pointer to a DWInterface struct that contains information about the
-#       current session.
-#   json_file: a pointer to a FILE object that represents the JSON file.
-#Return value:
-#   A pointer to a char array that contains two UUIDs, each 36 bytes long.
-# def dw_interface_commit_handshake(dwi,json_file):
-#     if not dwi.init:   #init set to true after DWI created.
-#         PANIC("DWInterface must be initialized")
-
-#     if not dwi.uuids[0] or not dwi.uuids[1]:
-#         PANIC("DWInterface uuids must be set")
-#     UNIMPLEMENTED("commit_handshake()")
-
-
-#insert_data() inserts new information into the DataWarehouse by sending a POST request
-#   with a JSON file as the body.
-#Parameters:
-#   dwi: a pointer to a DWInterface struct that contains information about the
-#        DataWarehouse connection.
-#   source_uuid: the source uuid that is needed.
-#   metric_uuid: the metric uuid that is needed.
-#   json_file: a pointer to a FILE object that represents the JSON file.
-# Return value:
-#   An int value that indicates the status of the insertion operation.
-#   (0 for success, non-zero for failure)
-# def dw_interface_insert_data(dwi, source_uuid, metric_uuid, json_file):
-#     UNIMPLEMENTED("insert_data()")
-#     #construct URL
-
-#     #Perform a POST request.
-#     post_request(dwi, url, json_file)
-
-
-
-#retrieve_data() sends a query string to the DataWarehouse and returns a JSON-
-#   formatted string as a result.
-#Parameters:
-#   dwi: a DWInterface struct that contains information about the DataWarehouse connection.
-#   query_string: a string containing the query string?
-#Return value:
-#   A pointer to a char array that contains the JSON formatted string returned by the DataWarehouse.
-
-# def dw_interface_retrieve_data(dwi, query_string):
-#     if not dwi.init:   #init set to true after DWI created.
-#         PANIC("DWInterface must be initialized")
-
-#     if not dwi.uuids[0] or not dwi.uuids[1]:
-#         PANIC("DWInterface uuids must be set")
-#     UNIMPLEMENTED("retrive_data()")
-#...
-
-
-#destroy()

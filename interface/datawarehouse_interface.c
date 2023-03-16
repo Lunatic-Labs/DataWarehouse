@@ -1,5 +1,4 @@
 #include <assert.h>  // Debugging. Should not be in release.
-#include <stdbool.h> // Instead of ints for bools.
 #include <errno.h>   // Error handling.
 #include <regex.h>   // For verifying UUIDS are correct based off of regular expression.
 #include <stdio.h>   // I/O.
@@ -57,14 +56,16 @@
     }                                           \
   } while (0)
 
+// Our current way of handling errors. This will print an error message and crash.
+#define PANIC(msg)                                                      \
+  do {                                                                  \
+    fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__);  \
+    exit(EXIT_FAILURE);                                                 \
+  } while (0)
+
 // The `authority` is the part of the url that is: http://ip_addr:port/
 char *GLOBAL_AUTHORITY;
 
-// Our current way of handling errors. This will print an error message and crash.
-#define PANIC(msg) do {                                              \
-  fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__); \
-  exit(EXIT_FAILURE);                                                \
-} while (0)
 
 // TODO: Instead of calling PANIC() whenever a fatal error occurs, we should
 //       eventually move to using error codes and have a better way to handle
@@ -159,12 +160,6 @@ static int verify_uuid(const char *uuid) {
           | REG_NOSUB
           | REG_ICASE);
   return regexec(&regex, uuid, (size_t)0, NULL, (int)0);
-}
-
-static bool verify_query_string(const char *query_string) {
-  NOP(query_string);
-  UNIMPLEMENTED;
-  return true;
 }
 
 /*
@@ -507,7 +502,9 @@ void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
 char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
   UUIDS_PRESENT(dwi);
 
-  // TODO: verify query string here.
+  if (*(query_string) != '?') {
+    PANIC(Invalid query string. The first character of a query_string must be '!');
+  }
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
   char *url = construct_url(QUERY_PATH);

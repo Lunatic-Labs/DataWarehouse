@@ -3,37 +3,29 @@
 #include <errno.h>
 #include "datawarehouse_interface.h"
 
-#define HANDSHAKE_JSON "../../handshake.json"
-#define INSERT_JSON "../../insert.json"
+#define HANDSHAKE_PATH "../../handshake.json"
+#define INSERT_PATH "../../insert.json"
 
-const char *group_uuid  = "2d41cd1f-6bed-45e0-b94c-a2429bc81fae";
-const char *source_uuid = "5e1f1a24-f7b6-4793-b366-145aa256311e";
-const char *metric_uuid = "ee2d77e1-209e-4e97-a658-574030c403c4";
-
-const char *query_string = "?limit=1";
-/* dw_interface_commit_handshake(dwi, handshake_json); */
+/* dw_interface_commit_handshake(dwi, handshake_file); */
+/* dw_interface_insert_data(dwi, insert_file); */
 
 int main(void) {
-  FILE *handshake_json = fopen(HANDSHAKE_JSON, "r");
-  FILE *insert_json    = fopen(INSERT_JSON, "r");
 
-  if (!handshake_json) {
-    fprintf(stderr, "ERROR: could not open file. Reason: %s\n", strerror(errno));
-  }
-
-  if (!insert_json) {
-    fprintf(stderr, "ERROR: could not open file. Reason: %s\n", strerror(errno));
-  }
+  FILE *handshake_file = fopen(HANDSHAKE_PATH, "r");
+  FILE *insert_file = fopen(INSERT_PATH, "r");
+  const char *query_string = "?class_gpa__eq=4";
+  const char *group_uuid   = "0879623d-8595-4cd1-aaa0-80e850e563a1";
+  const char *source_uuid  = "ac2f3f7f-ab0c-4393-a625-1e860731fa58";
+  const char *metric_uuid  = "8b78534a-f559-4db6-8449-35c51c8bc1ab";
 
   DWInterface *dwi = dw_interface_create("usr", "pass", ENV_LOCAL, PORT_DEV);
+  dw_interface_set_uuids(dwi, group_uuid, source_uuid, metric_uuid);
 
-  dw_interface_insert_data(dwi, insert_json);
+  const char *response = dw_interface_query_data(dwi, query_string);
+  printf("RESPONSE: %s\n", response);
 
-
-
-
-  fclose(handshake_json);
-  fclose(insert_json);
   dw_interface_destroy(dwi);
+  fclose(handshake_file);
+  fclose(insert_file);
   return 0;
 }

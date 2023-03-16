@@ -73,3 +73,38 @@ class DWInterface:
 if __name__ == "__main__": # Use this for running code, testing, debugging, etc.
     dw = DWInterface("usr", "pass")
 
+# Good job with this, it'll be useful.
+#post_request() is called within commit_handshake() and insert_data().
+#This seems to be where the gruntwork of POSTing using PycURL happens.
+# post_request(dwi, url, json_file)
+# {
+#     c = pycurl.Curl()
+#     c.setopt(c.URL, url)
+
+#     #Set the content type header to application/json.
+#     c.setopt(c.HTTPPOST, [
+#     ('fileupload', (
+#         c.FORM_BUFFER, json_file,
+#         c.FORM_CONTENTTYPE, 'Content-Type: application/json',
+#     )),
+#     ])
+
+#     #Get the file data and set the request body to these contents.
+#     try
+#         file_data = open(json_file, "r")
+#     except IOError
+#         PANIC('Post_request() failed to read file contents')
+#         exit(1)
+#     c.setopt(c.POSTFIELDS, urlencode(file_data.read()))    #data must be urlencoded for PycURL
+
+#     #get the size of the file and set the request body size to match.
+#     json_file.seek(0, os.SEEK_END)
+#     file_size = json_file.tell()
+#     c.setopt(c.POSTFIELDSIZE, file_size)
+
+#     c.perform()
+#     c.close()
+#     file_data.close()
+
+#     #NEED TO: assign and return a response? What is it, and why are we returning it?
+# }

@@ -400,14 +400,15 @@ static const char *post_request(const DWInterface *dwi, const char *url, FILE *j
 
   curl_slist_free_all(headers);
 
-  char *response = s_malloc(buf.size);
-  memcpy(response, buf.data, buf.size);
+  char *response = s_malloc(buf.size + 1);
+  strncpy(response, buf.data, buf.size);
+  response[buf.size] = '\0';
 
   free(buf.data);
   return response;
 }
 
-const char *get_request(const DWInterface *dwi, const char *url) {
+char *get_request(const DWInterface *dwi, const char *url) {
   struct buffer_t buf = buffer_t_create(1024);
 
   // Set the options for curl.
@@ -428,7 +429,11 @@ const char *get_request(const DWInterface *dwi, const char *url) {
   }
 
   // We now have the response from the DataWarehouse.
-  const char *response = buf.data;
+  // Copy buf.data into char *response.
+  char *response = s_malloc(buf.size + 1);
+  strncpy(response, buf.data, buf.size);
+  response[buf.size] = '\0';
+
   free(buf.data);
   return response;
 }
@@ -499,7 +504,7 @@ void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
  */
-const char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
+char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
   UUIDS_PRESENT(dwi);
 
   // TODO: verify query string here.
@@ -525,7 +530,7 @@ const char *dw_interface_query_data(const DWInterface *dwi, const char *query_st
   strcat(url_uuids_query_string, query_string);
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
-  const char *request = get_request(dwi, url_uuids_query_string);
+  char *request = get_request(dwi, url_uuids_query_string);
 
   free(url);
   free(url_uuids_query_string);

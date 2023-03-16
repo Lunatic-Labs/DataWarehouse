@@ -1,12 +1,13 @@
-#include <assert.h>  // Debugging. Should not be in release.
-#include <errno.h>   // Error handling.
-#include <regex.h>   // For verifying UUIDS are correct based off of regular expression.
-#include <stdio.h>   // I/O.
-#include <stdlib.h>  // Standard library.
-#include <string.h>  // Functions for string manipulation.
+#include <assert.h> // Debugging. Should not be in release.
+#include <errno.h>  // Error handling.
+#include <regex.h>  // For verifying UUIDS are correct based off of regular expression.
+#include <stdio.h>  // I/O.
+#include <stdlib.h> // Standard library.
+#include <string.h> // Functions for string manipulation.
 
-// NOTE: To install: sudo apt install libcurl4-openssl-dev
-// NOTE: Documentation: https://curl.se/libcurl/c/
+// NOTE: To install (Linux): sudo apt install libcurl4-openssl-dev
+// NOTE: To install (MacOS): brew install curl
+// NOTE: Library documentation: https://curl.se/libcurl/c/
 #include <curl/curl.h> // Communication with the DataWarehouse.
 
 // Access to function definitions.
@@ -51,7 +52,7 @@
   do {                                          \
     for (int i = 0; i < 3; i++) {               \
       if (dwi->uuids[i][0] == '\0') {           \
-        PANIC(uuids must be set);               \
+        PANIC(UUIDs must be set);               \
       }                                         \
     }                                           \
   } while (0)
@@ -65,7 +66,6 @@
 
 // The `authority` is the part of the url that is: http://ip_addr:port/
 char *GLOBAL_AUTHORITY;
-
 
 // TODO: Instead of calling PANIC() whenever a fatal error occurs, we should
 //       eventually move to using error codes and have a better way to handle
@@ -150,7 +150,6 @@ static void *s_realloc(void *ptr, size_t nbytes) {
  * Returns:
  *   0 if the string is a valid UUID, REG_NOMATCH if it is not, or a
  *   nonzero error code if an error occurs.
- * NOTE: We may not need this function, but it's here just in case.
  */
 static int verify_uuid(const char *uuid) {
   regex_t regex;
@@ -226,7 +225,7 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
       ip_addr = LOCAL_IP_ADDR;
       break;
     default:
-      PANIC(invalid environment);
+      PANIC(Invalid environment);
   }
 
   // Set the port based on the specified port.
@@ -241,7 +240,7 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
       port = PRODUCTION_PORT;
       break;
     default:
-      PANIC(invalid port);
+      PANIC(Invalid port);
   }
 
   // Calculate the length of the protocol, IP address, and port.
@@ -299,11 +298,12 @@ DWInterface *dw_interface_create(const char *username,
   size_t pass_len = strlen(password);
 
   if (!usr_len || !pass_len) {
-    PANIC(username and password length must be at least 1);
+    PANIC(Username and password length must be at least 1);
   }
 
   DWInterface *dwi = s_malloc(sizeof(DWInterface));
 
+  // Copy over username and password.
   dwi->username = s_malloc(usr_len  + 1);
   dwi->password = s_malloc(pass_len + 1);
 
@@ -319,6 +319,7 @@ DWInterface *dw_interface_create(const char *username,
   dwi->env  = env;
   dwi->port = port;
 
+  // Set all UUIDs blank.
   dwi->uuids[0][0] = '\0';
   dwi->uuids[1][0] = '\0';
   dwi->uuids[2][0] = '\0';
@@ -334,21 +335,30 @@ void dw_interface_set_uuids(DWInterface *dwi,
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
   if (verify_uuid(group_uuid) != 0) {
-    PANIC(invalid group_uuid);
+    PANIC(Invalid group_uuid);
   }
   if (verify_uuid(source_uuid) != 0) {
-    PANIC(invalid source_uuid);
+    PANIC(Invalid source_uuid);
   }
   if (verify_uuid(metric_uuid) != 0) {
-    PANIC(invalid metric_uuid);
+    PANIC(Invalid metric_uuid);
   }
 
+  // Copy UUIDs into DWInterface instance.
   strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
   strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
   strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
 
-static const char *post_request(const DWInterface *dwi, const char *url, FILE *json_file) {
+static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
+  char *response = s_malloc(buf_sz + 1);
+  strncpy(response, buf_data, buf_sz);
+  response[buf_sz] = '\0';
+  return response;
+}
+
+// Perform a POST request.
+static const char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
@@ -393,23 +403,23 @@ static const char *post_request(const DWInterface *dwi, const char *url, FILE *j
     PANIC();
   }
 
-  curl_slist_free_all(headers);
+  // Copy the buffer data into response.
+  char *response = copy_buffer_data(buf.data, buf.size);
 
-  char *response = s_malloc(buf.size + 1);
-  strncpy(response, buf.data, buf.size);
-  response[buf.size] = '\0';
+  curl_slist_free_all(headers);
 
   free(buf.data);
   return response;
 }
 
-char *get_request(const DWInterface *dwi, const char *url) {
+// Perform a GET request.
+char *GET_request(const DWInterface *dwi, const char *url) {
   struct buffer_t buf = buffer_t_create(1024);
 
   // Set the options for curl.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION,  callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,      &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,            url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           url);
 
   // Allow redirects.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
@@ -423,11 +433,8 @@ char *get_request(const DWInterface *dwi, const char *url) {
     PANIC();
   }
 
-  // We now have the response from the DataWarehouse.
-  // Copy buf.data into char *response.
-  char *response = s_malloc(buf.size + 1);
-  strncpy(response, buf.data, buf.size);
-  response[buf.size] = '\0';
+  // Copy the buffer data into response.
+  char *response = copy_buffer_data(buf.data, buf.size);
 
   free(buf.data);
   return response;
@@ -450,7 +457,7 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
   char *url = construct_url(HANDSHAKE_PATH);
 
   // Perform a POST request.
-  const char *response = post_request(dwi, url, json_file);
+  const char *response = POST_request(dwi, url, json_file);
 
   // Write the received information to an output file.
   FILE *fp = fopen("handshake_information.json", "w");
@@ -474,16 +481,13 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   source_uuid: the source uuid that is needed.
  *   metric_uuid: the metric uuid that is needed.
  *   json_file: a pointer to a FILE object that represents the JSON file.
- * Return value:
- *   An int value that indicates the status of the insertion operation.
- *   (0 for success, non-zero for failure)
  */
 void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
 
   // Perform a POST request.
-  post_request(dwi, url, json_file);
+  POST_request(dwi, url, json_file);
 
   free(url);
 }
@@ -503,7 +507,7 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
   UUIDS_PRESENT(dwi);
 
   if (*(query_string) != '?') {
-    PANIC(Invalid query string. The first character of a query_string must be '!');
+    PANIC(Invalid query string. The first character of a query_string must be '?');
   }
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
@@ -527,7 +531,7 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
   strcat(url_uuids_query_string, query_string);
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
-  char *request = get_request(dwi, url_uuids_query_string);
+  char *request = GET_request(dwi, url_uuids_query_string);
 
   free(url);
   free(url_uuids_query_string);

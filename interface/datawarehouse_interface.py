@@ -1,6 +1,32 @@
+from DataWarehouse.datawarehouse.service import data_insert_service
+from uuid import uuid4 # will allow us to creat uuids
 import os
 import pycurl
 import sys
+
+# REMOTE_IP_ADDR      = "54.159.108.136"
+# LOCAL_IP_ADDR       = "127.0.0.1"
+
+# DEVELOPMENT_PORT    = 5000
+# STAGING_PORT        = 4000
+# PRODUCTION_PORT     = 3000
+
+class DWInterface():
+    # Not sure param names yet
+    def __init__(self, data, json):
+        self.data = data
+        self.json = json
+
+    def queryData(self):
+        pass
+
+    def insertData(self):
+        pass
+    
+    def commitHandshake(self):
+        # Possible way to verify uuid's exist
+        if not data_insert_service.InsertDataService.verifyInformation(self.data):
+            return "DWInterface uuids must be set"
 
   
 #LINE: Stand-in for the C Macro that's used in that interface. This returns the current line number, for debug purposes. 

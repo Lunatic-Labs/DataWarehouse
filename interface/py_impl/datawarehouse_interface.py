@@ -30,6 +30,9 @@ class DWInterface:
         self.__source_uuid = source_uuid
         self.__metric_uuid = metric_uuid
         self.__authority = 'http://' + ip + port
+        self.__handshake_url = self.__authority + self.handshake_path
+        self.__insert_url = self.__authority + self.insert_path
+        self.__query_url = self.__authority + self.query_path
 
     # Private Functions.
 
@@ -40,10 +43,11 @@ class DWInterface:
         '''
         pass
 
-    def __GETRequest(self, query_string):
+    def __GETRequest(self, query_string, out_filepath):
         '''
         This function should return a string that is the response from the server.
         '''
+        outfp = None
 
         if (self.__group_uuid is None or self.__source_uuid is None or self.__metric_uuid is None):
             raise ValueError('UUIDs must be set')
@@ -51,8 +55,11 @@ class DWInterface:
         if (query_string[0] != '?'):
             raise ValueError('Query string must start with `?`')
 
+        if (out_filepath != None):
+            outfp = open(out_filepath, "w")
+
         # Create the url. It should be: 'http://ip_addr:port/group_uuid/source_uuid/query_string
-        url = self.__authority + self.query_path + self.__group_uuid + '/' + self.__source_uuid + '/' + query_string
+        url = self.__query_url + self.__group_uuid + '/' + self.__source_uuid + '/' + query_string
 
         # Create a buffer to recieve data.
         buf = BytesIO()
@@ -72,7 +79,10 @@ class DWInterface:
 
         # Get the response from the buffer and decode.
         body = buf.getvalue()
-        return body.decode('iso-8859-1') # TODO: Need to find out the encoding from server.
+        response = body.decode('iso-8859-1')
+        if (out_filepath != None):
+            outfp.write(response)
+        return response # TODO: Need to find out the encoding from server.
 
     def __verifyUUID(self, unverified_uuid):
         try:
@@ -90,7 +100,7 @@ class DWInterface:
         pass
 
     def queryData(self, query_string, out_file=None):
-        return self.__GETRequest(query_string)
+        return self.__GETRequest(query_string, out_file)
 
     def setUUIDs(self, group_uuid, source_uuid, metric_uuid):
         if self.__verifyUUID(group_uuid) and self.__verifyUUID(source_uuid) and self.__verifyUUID(metric_uuid):

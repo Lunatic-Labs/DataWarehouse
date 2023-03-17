@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I. -std=c11 -Wall -Wextra
 LDFLAGS = -lcurl
-DEPS = datawarehouse_interface.h
+DEPS = datawarehouse_interface.h datawarehouse_config.h datawarehouse_utils.h
 OBJ = main.o datawarehouse_interface.o
 
 %.o: %.c $(DEPS)

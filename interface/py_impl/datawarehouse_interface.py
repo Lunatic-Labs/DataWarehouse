@@ -5,16 +5,21 @@ import os
 import pycurl
 from io import BytesIO
 import certifi
+import uuid
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
 class DWInterface:
-    remote_ip_address = "44.204.92.26"
-    local_ip_address = "127.0.0.1"
+    remote_ip_address = '44.204.92.26'
+    local_ip_address = '127.0.0.1'
 
-    development_port = 5000
-    staging_port = 4000
-    production_port = 3000
+    handshake_path = '/api/prepare/'
+    insert_path = '/api/store/'
+    query_path = '/api/query/'
+
+    development_port = ':5000'
+    staging_port = ':4000'
+    production_port = ':3000'
 
     def __init__(self, username, password, ip=local_ip_address, port=development_port, group_uuid=None, source_uuid=None, metric_uuid=None):
         self.__username = username
@@ -24,22 +29,34 @@ class DWInterface:
         self.__group_uuid = group_uuid
         self.__source_uuid = source_uuid
         self.__metric_uuid = metric_uuid
+        self.__authority = 'http://' + ip + port
 
     # Private Functions.
 
     def __POSTRequest(self, url, json_file):
         '''
         This function should not return anything.
+        curl_handle.setopt(pycurl.HTTPPOST, [('fileupload', (pycurl.FORM_FILE, json_file)), ('string', 'string_value')])
         '''
         pass
 
-    def __GETRequest(self, url):
+    def __GETRequest(self, query_string):
         '''
         This function should return a string that is the response from the server.
         '''
-        # Create a buffer to recieve data.
 
+        if (self.__group_uuid is None or self.__source_uuid is None or self.__metric_uuid is None):
+            raise ValueError('UUIDs must be set')
+
+        if (query_string[0] != '?'):
+            raise ValueError('Query string must start with `?`')
+
+        # Create the url. It should be: 'http://ip_addr:port/group_uuid/source_uuid/query_string
+        url = self.__authority + self.query_path + self.__group_uuid + '/' + self.__source_uuid + '/' + query_string
+
+        # Create a buffer to recieve data.
         buf = BytesIO()
+
         # Create CURL handle.
         curl_handle = pycurl.Curl()
 
@@ -47,6 +64,7 @@ class DWInterface:
         curl_handle.setopt(curl_handle.URL, url)
         curl_handle.setopt(curl_handle.WRITEDATA, buf)
         curl_handle.setopt(curl_handle.CAINFO, certifi.where())
+        curl_handle.setopt(pycurl.HTTPGET, 1)
 
         # Perform CURL and cleanup.
         curl_handle.perform()
@@ -56,6 +74,13 @@ class DWInterface:
         body = buf.getvalue()
         return body.decode('iso-8859-1') # TODO: Need to find out the encoding from server.
 
+    def __verifyUUID(self, unverified_uuid):
+        try:
+            uuid.UUID(str(unverified_uuid))
+            return True
+        except ValueError:
+            return False;
+
     # Public Functions.
 
     def commitHandshake(self, handshake_json):
@@ -64,14 +89,24 @@ class DWInterface:
     def insertData(self, insert_json):
         pass
 
-    def queryData(self, query_string):
-        pass
+    def queryData(self, query_string, out_file=None):
+        return self.__GETRequest(query_string)
 
     def setUUIDs(self, group_uuid, source_uuid, metric_uuid):
-        pass
+        if self.__verifyUUID(group_uuid) and self.__verifyUUID(source_uuid) and self.__verifyUUID(metric_uuid):
+            self.__group_uuid = group_uuid
+            self.__source_uuid = source_uuid
+            self.__metric_uuid = metric_uuid
+        else:
+            raise ValueError('Invalid UUIDs provided')
 
-if __name__ == "__main__": # Use this for running code, testing, debugging, etc.
-    dw = DWInterface("usr", "pass")
+if __name__ == '__main__': # Use this for running code, testing, debugging, etc.
+    guuid = 'c85ad1d4-2147-44eb-ba30-3206f26d6569'
+    suuid = '3d276782-6656-4e5e-b41c-6236ac86a021'
+    muuid = '75b9d8f7-9e39-47b5-909a-76d0e2c9cb13'
+    dw = DWInterface('usr', 'pass')
+    dw.setUUIDs(guuid, suuid, muuid)
+    print(dw.queryData('?limit=1'))
 
 # Good job with this, it'll be useful.
 #post_request() is called within commit_handshake() and insert_data().
@@ -91,7 +126,7 @@ if __name__ == "__main__": # Use this for running code, testing, debugging, etc.
 
 #     #Get the file data and set the request body to these contents.
 #     try
-#         file_data = open(json_file, "r")
+#         file_data = open(json_file, 'r')
 #     except IOError
 #         PANIC('Post_request() failed to read file contents')
 #         exit(1)

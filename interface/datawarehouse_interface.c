@@ -14,7 +14,7 @@
 #include "datawarehouse_interface.h"
 
 // IP address for the EC2 instance.
-#define REMOTE_IP_ADDR "44.211.159.159"
+#define REMOTE_IP_ADDR "44.204.92.26"
 
 // IP address for localhost.
 #define LOCAL_IP_ADDR  "127.0.0.1"
@@ -358,7 +358,7 @@ static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
 }
 
 // Perform a POST request.
-static const char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
+static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
@@ -440,6 +440,19 @@ char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
+/* fopen() wrapper. This function will open a file that is specified
+ * with the appropriate permission ("r", "w"). Error checking is
+ * then performed. Returns a pointer to the opened file.
+*/
+static FILE *open_file(const char *filepath, const char *permission) {
+  FILE *fp = fopen(filepath, permission);
+  if (!fp) {
+    fprintf(stderr, "ERROR: could not open file: %s. Reason: %s\n", filepath, strerror(errno));
+    PANIC(Stopping communication with DataWarehouse);
+  }
+  return fp;
+}
+
 /*
  * This function takes a JSON file to upload to the DataWarehouse and prints the
  * output into a file called: handshake_information.json. This function should
@@ -451,25 +464,34 @@ char *GET_request(const DWInterface *dwi, const char *url) {
  * Return value:
  *   None.
  */
-void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
+char *dw_interface_commit_handshake(const DWInterface *dwi,
+                                    const char *handshake_json_filepath,
+                                    const char *out_filepath) {
+  FILE *infp = open_file(handshake_json_filepath, "r");
+  FILE *outfp;
+
+  if (out_filepath) {
+    outfp = open_file(out_filepath, "w");
+  }
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the HANDSHAKE_PATH.
   char *url = construct_url(HANDSHAKE_PATH);
 
   // Perform a POST request.
-  const char *response = POST_request(dwi, url, json_file);
+  char *response = POST_request(dwi, url, infp);
 
   // Write the received information to an output file.
-  FILE *fp = fopen("handshake_information.json", "w");
-  if (!fp) {
-    fprintf(stderr, "ERROR: failed to create and write to file `handshake_information.json`. Reason: %s\n",
-            strerror(errno));
-    PANIC();
+  if (out_filepath) {
+    fputs(response, outfp);
   }
-  fputs(response, fp);
 
-  fclose(fp);
+  if (out_filepath) {
+    fclose(outfp);
+  }
+  fclose(infp);
   free(url);
+
+  return response;
 }
 
 /*
@@ -482,13 +504,17 @@ void dw_interface_commit_handshake(const DWInterface *dwi, FILE *json_file) {
  *   metric_uuid: the metric uuid that is needed.
  *   json_file: a pointer to a FILE object that represents the JSON file.
  */
-void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
+void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_filepath) {
+
+  FILE *infp = open_file(insert_json_filepath, "r");
+
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
   char *url = construct_url(INSERT_PATH);
 
   // Perform a POST request.
-  POST_request(dwi, url, json_file);
+  POST_request(dwi, url, infp);
 
+  fclose(infp);
   free(url);
 }
 
@@ -503,8 +529,15 @@ void dw_interface_insert_data(const DWInterface *dwi, FILE *json_file) {
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
  */
-char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) {
+char *dw_interface_query_data(const DWInterface *dwi,
+                              const char *query_string,
+                              const char *out_filepath) {
   UUIDS_PRESENT(dwi);
+  FILE *outfp;
+
+  if (out_filepath) {
+    outfp = open_file(out_filepath, "w");
+  }
 
   if (*(query_string) != '?') {
     PANIC(Invalid query string. The first character of a query_string must be '?');
@@ -531,11 +564,19 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string) 
   strcat(url_uuids_query_string, query_string);
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
 
-  char *request = GET_request(dwi, url_uuids_query_string);
+  char *response = GET_request(dwi, url_uuids_query_string);
 
+  // Write the received information to an output file.
+  if (out_filepath) {
+    fputs(response, outfp);
+  }
+
+  if (out_filepath) {
+    fclose(outfp);
+  }
   free(url);
   free(url_uuids_query_string);
-  return request;
+  return response;
 }
 
 /*

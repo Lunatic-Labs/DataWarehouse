@@ -1,78 +1,8 @@
-#include <assert.h> // Debugging. Should not be in release.
-#include <errno.h>  // Error handling.
-#include <regex.h>  // For verifying UUIDS are correct based off of regular expression.
-#include <stdio.h>  // I/O.
-#include <stdlib.h> // Standard library.
-#include <string.h> // Functions for string manipulation.
-
-// NOTE: To install (Linux): sudo apt install libcurl4-openssl-dev
-// NOTE: To install (MacOS): brew install curl
-// NOTE: Library documentation: https://curl.se/libcurl/c/
-#include <curl/curl.h> // Communication with the DataWarehouse.
-
-// Access to function definitions.
 #include "datawarehouse_interface.h"
-
-// IP address for the EC2 instance.
-#define REMOTE_IP_ADDR "44.204.92.26"
-
-// IP address for localhost.
-#define LOCAL_IP_ADDR  "127.0.0.1"
-
-// Different ports for different databases.
-// 5000 -> Development (aka dw_dev)
-// 4000 -> Staging     (aka dw_staging)
-// 3000 -> Production  (aka dw_prod)
-#define DEVELOPMENT_PORT ":5000"
-#define STAGING_PORT     ":4000"
-#define PRODUCTION_PORT  ":3000"
-
-// Paths for different controllers.
-#define HANDSHAKE_PATH "/api/prepare/"
-#define INSERT_PATH    "/api/store/"
-#define QUERY_PATH     "/api/query/"
-
-// Less confusion when accessing DWInterface->uuids.
-#define GROUP_UUID  0
-#define SOURCE_UUID 1
-#define METRIC_UUID 2
-
-// Length of UUIDs.
-#define UUID_LEN 36
-
-// `No Operation`. Use to surpress `unused variable` warnings.
-#define NOP(x) (void)(x);
-
-// Put in functions to crash at unimplemented features.
-#define UNIMPLEMENTED  printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
-  exit(EXIT_FAILURE);
-
-// Check if the UUIDs have been set.
-#define UUIDS_PRESENT(dwi)                      \
-  do {                                          \
-    for (int i = 0; i < 3; i++) {               \
-      if (dwi->uuids[i][0] == '\0') {           \
-        PANIC(UUIDs must be set);               \
-      }                                         \
-    }                                           \
-  } while (0)
-
-// Our current way of handling errors. This will print an error message and crash.
-#define PANIC(msg)                                                      \
-  do {                                                                  \
-    fprintf(stderr, "Panic: %s at %s:%d\n", #msg, __FILE__, __LINE__);  \
-    exit(EXIT_FAILURE);                                                 \
-  } while (0)
+#include "_datawarehouse_config_INTERNAL.h"
 
 // The `authority` is the part of the url that is: http://ip_addr:port/
 char *GLOBAL_AUTHORITY;
-
-// TODO: Instead of calling PANIC() whenever a fatal error occurs, we should
-//       eventually move to using error codes and have a better way to handle
-//       errors or failures.
-enum ErrorCode {
-  OK = 1,
-};
 
 /*
  * buffer_t: A structure that represents a dynamic buffer of characters. It
@@ -118,6 +48,9 @@ static void *s_malloc(size_t nbytes) {
             nbytes, strerror(errno));
     PANIC();
   }
+#ifdef VERBOSE
+  printf("Allocated %zu bytes\n", nbytes);
+#endif
   return p;
 }
 
@@ -140,7 +73,26 @@ static void *s_realloc(void *ptr, size_t nbytes) {
             nbytes, strerror(errno));
     PANIC();
   }
+#ifdef VERBOSE
+  printf("Reallocated %zu bytes\n", nbytes);
+#endif
   return p;
+}
+
+/* fopen() wrapper. This function will open a file that is specified with
+ * the appropriate permission ("r", "w", "b", "wr", etc.). Error checking is
+ * then performed. Returns a pointer to the opened file.
+ */
+static FILE *open_file(const char *filepath, const char *permission) {
+  FILE *fp = fopen(filepath, permission);
+  if (!fp) {
+    fprintf(stderr, "ERROR: could not open file: %s. Reason: %s\n", filepath, strerror(errno));
+    PANIC(Stopping communication with DataWarehouse);
+  }
+#ifdef VERBOSE
+  printf("Opened file: %s with permissions: %s\n", filepath, permission);
+#endif
+  return fp;
 }
 
 /*
@@ -155,9 +107,7 @@ static int verify_uuid(const char *uuid) {
   regex_t regex;
   regcomp(&regex,
           "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-          REG_EXTENDED
-          | REG_NOSUB
-          | REG_ICASE);
+          REG_EXTENDED | REG_NOSUB | REG_ICASE);
   return regexec(&regex, uuid, (size_t)0, NULL, (int)0);
 }
 
@@ -174,6 +124,9 @@ struct buffer_t buffer_t_create(size_t m) {
   buff.data = s_malloc(m * sizeof(char));
   buff.size = 0;
   buff.max  = m;
+#ifdef VERBOSE
+  printf("Created buffer with max size: %zu\n", m);
+#endif
   return buff;
 }
 
@@ -228,6 +181,10 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
       PANIC(Invalid environment);
   }
 
+#ifdef VERBOSE
+  printf("Set IP address: %s\n", ip_addr);
+#endif
+
   // Set the port based on the specified port.
   switch (dwi->port) {
     case PORT_DEV:
@@ -242,6 +199,10 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
     default:
       PANIC(Invalid port);
   }
+
+#ifdef VERBOSE
+  printf("Set port: %s\n", port);
+#endif
 
   // Calculate the length of the protocol, IP address, and port.
   size_t protocol_len = strlen(protocol);
@@ -259,6 +220,10 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
   strcpy(GLOBAL_AUTHORITY, protocol);
   strcat(GLOBAL_AUTHORITY, ip_addr);
   strcat(GLOBAL_AUTHORITY, port);
+
+#ifdef VERBOSE
+  printf("GLOBAL_AUTHORY = %s\n", GLOBAL_AUTHORITY);
+#endif
 }
 
 /*
@@ -276,6 +241,11 @@ static char *construct_url(const char *path) {
   char *url = s_malloc(strlen(GLOBAL_AUTHORITY) + strlen(path) + 1);
   strcpy(url, GLOBAL_AUTHORITY);
   strcat(url, path);
+
+#ifdef VERBOSE
+  printf("Constructed URL: %s\n", url);
+#endif
+
   return url;
 }
 
@@ -310,6 +280,10 @@ DWInterface *dw_interface_create(const char *username,
   strcpy(dwi->username, username);
   strcpy(dwi->password, password);
 
+#ifdef VERBOSE
+  printf("Set username: %s and password: %s\n", username, password);
+#endif
+
   // Init curl/curl.h library.
   curl_global_init(CURL_GLOBAL_ALL);
 
@@ -324,6 +298,10 @@ DWInterface *dw_interface_create(const char *username,
   dwi->uuids[1][0] = '\0';
   dwi->uuids[2][0] = '\0';
 
+#ifdef VERBOSE
+  printf("Building GLOBAL_AUTHORITY...\n");
+#endif
+
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
 
@@ -334,6 +312,10 @@ void dw_interface_set_uuids(DWInterface *dwi,
                             const char group_uuid[UUID_LEN],
                             const char source_uuid[UUID_LEN],
                             const char metric_uuid[UUID_LEN]) {
+#ifdef VERBOSE
+  printf("Verifying UUIDs:\n\t%s\n\t%s\n\t%s\n", group_uuid, source_uuid, metric_uuid);
+#endif
+
   if (verify_uuid(group_uuid) != 0) {
     PANIC(Invalid group_uuid);
   }
@@ -344,17 +326,39 @@ void dw_interface_set_uuids(DWInterface *dwi,
     PANIC(Invalid metric_uuid);
   }
 
+#ifdef VERBOSE
+  printf("Copying UUIDs\n");
+#endif
+
   // Copy UUIDs into DWInterface instance.
   strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
   strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
   strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
+
 }
 
 static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
   char *response = s_malloc(buf_sz + 1);
   strncpy(response, buf_data, buf_sz);
   response[buf_sz] = '\0';
+
+#ifdef VERBOSE
+  printf("Copied buffer data\n");
+#endif
+
   return response;
+}
+
+static void perform_curl_and_check(CURLcode code) {
+  if (code != CURLE_OK) {
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(code));
+    PANIC();
+  }
+
+#ifdef VERBOSE
+  printf("CURL performed successfully\n");
+#endif
 }
 
 // Perform a POST request.
@@ -362,8 +366,12 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
   char *file_data            = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
-  CURLcode curl_code;
 
+#ifdef VERBOSE
+  printf("Performing POST request with URL: %s\n", url);
+#endif
+
+  // Set the url and POST option.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
@@ -376,6 +384,10 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
   file_size = ftell(json_file);
   rewind(json_file);
 
+#ifdef VERBOSE
+  printf("Got file size: %zu\n", file_size);
+#endif
+
   // Get the file data.
   file_data = malloc(file_size + 1);
   if (!fread(file_data, 1, file_size, json_file)) {
@@ -385,8 +397,13 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
   }
   file_data[file_size] = '\0';
 
+#ifdef VERBOSE
+  printf("Got file data\n");
+#endif
+
   struct buffer_t buf = buffer_t_create(1024);
 
+  // Set options for writing data.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
 
@@ -396,24 +413,28 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
   // Set the request body size to the size of the file.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
 
-  curl_code = curl_easy_perform(dwi->curl_handle);
-  if (curl_code != CURLE_OK) {
-    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
-            curl_easy_strerror(curl_code));
-    PANIC();
-  }
+#ifdef VERBOSE
+  printf("Performing CURL...\n");
+#endif
+
+  // Perform CURL and check for failure.
+  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
 
   // Copy the buffer data into response.
   char *response = copy_buffer_data(buf.data, buf.size);
 
   curl_slist_free_all(headers);
-
   free(buf.data);
   return response;
 }
 
 // Perform a GET request.
 char *GET_request(const DWInterface *dwi, const char *url) {
+
+#ifdef VERBOSE
+  printf("Performing GET request...\n");
+#endif
+
   struct buffer_t buf = buffer_t_create(1024);
 
   // Set the options for curl.
@@ -424,14 +445,11 @@ char *GET_request(const DWInterface *dwi, const char *url) {
   // Allow redirects.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
 
-  // Start curl.
-  CURLcode curl_code = curl_easy_perform(dwi->curl_handle);
-
-  if (curl_code != CURLE_OK) {
-    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
-            curl_easy_strerror(curl_code));
-    PANIC();
-  }
+#ifdef VERBOSE
+  printf("Performing CURL...\n");
+#endif
+  // Perform CURL and check for failure.
+  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
 
   // Copy the buffer data into response.
   char *response = copy_buffer_data(buf.data, buf.size);
@@ -440,36 +458,31 @@ char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
-/* fopen() wrapper. This function will open a file that is specified
- * with the appropriate permission ("r", "w"). Error checking is
- * then performed. Returns a pointer to the opened file.
-*/
-static FILE *open_file(const char *filepath, const char *permission) {
-  FILE *fp = fopen(filepath, permission);
-  if (!fp) {
-    fprintf(stderr, "ERROR: could not open file: %s. Reason: %s\n", filepath, strerror(errno));
-    PANIC(Stopping communication with DataWarehouse);
-  }
-  return fp;
-}
-
 /*
  * This function takes a JSON file to upload to the DataWarehouse and prints the
  * output into a file called: handshake_information.json. This function should
  * be called before any data insertion or query operations.
+ * If `out_filepath` is given, it will also write the data recieved to that file.
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about the
  *        current session.
  *   json_file: a pointer to a FILE object that represents the JSON file.
+ *   out_filepath: The file in which to write the data to. Can be NULL.
  * Return value:
  *   None.
  */
 char *dw_interface_commit_handshake(const DWInterface *dwi,
                                     const char *handshake_json_filepath,
                                     const char *out_filepath) {
+#ifdef VERBOSE
+  printf("Performing handshake request with file(s):\n");
+  printf("\t%s\n\t%s\n", handshake_json_filepath, out_filepath? out_filepath : "NULL");
+#endif
+
   FILE *infp = open_file(handshake_json_filepath, "r");
   FILE *outfp;
 
+  // This needs to be here in order to not perform the CURL request.
   if (out_filepath) {
     outfp = open_file(out_filepath, "w");
   }
@@ -482,12 +495,13 @@ char *dw_interface_commit_handshake(const DWInterface *dwi,
 
   // Write the received information to an output file.
   if (out_filepath) {
+#ifdef VERBOSE
+    printf("Writing to file: %s\n", out_filepath);
+#endif
     fputs(response, outfp);
-  }
-
-  if (out_filepath) {
     fclose(outfp);
   }
+
   fclose(infp);
   free(url);
 
@@ -506,6 +520,10 @@ char *dw_interface_commit_handshake(const DWInterface *dwi,
  */
 void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_filepath) {
 
+#ifdef VERBOSE
+  printf("Performing insert data with file: %s\n", insert_json_filepath);
+#endif
+
   FILE *infp = open_file(insert_json_filepath, "r");
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the INSERT_PATH.
@@ -520,11 +538,13 @@ void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_fi
 
 /*
  * This function sends a query string to the DataWarehouse and returns a JSON
- * formatted string as a result.
+ * formatted string as a result. If `out_filepath` is given, it will also
+ * write the data recieved to that file.
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that contains information about
  *        the DataWarehouse connection.
  *   query_string: a pointer to a char array that contains the query string.
+ *   out_filepath: The file in which to write the data to. Can be NULL.
  * Return value:
  *   A pointer to a char array that contains the JSON formatted string
  *   returned by the DataWarehouse.
@@ -532,9 +552,15 @@ void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_fi
 char *dw_interface_query_data(const DWInterface *dwi,
                               const char *query_string,
                               const char *out_filepath) {
+#ifdef VERBOSE
+  printf("Performing query data with query string and (file):\n");
+  printf("\t%s\n\t%s\n", query_string, out_filepath? out_filepath : "NULL");
+#endif
+
   UUIDS_PRESENT(dwi);
   FILE *outfp;
 
+  // This needs to be here in order to not perform the CURL request.
   if (out_filepath) {
     outfp = open_file(out_filepath, "w");
   }
@@ -546,6 +572,7 @@ char *dw_interface_query_data(const DWInterface *dwi,
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
   char *url = construct_url(QUERY_PATH);
 
+  // Get lengths of all necessary strings to build the appropriate url.
   size_t query_string_len = strlen(query_string);
   size_t group_uuid_len   = strlen(dwi->uuids[GROUP_UUID]);
   size_t source_uuid_len  = strlen(dwi->uuids[SOURCE_UUID]);
@@ -556,24 +583,29 @@ char *dw_interface_query_data(const DWInterface *dwi,
     = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
 
   // Start concatenating the strings together to build the final url.
-  strcpy(url_uuids_query_string, url);
-  strcat(url_uuids_query_string, dwi->uuids[GROUP_UUID]);
+  strncpy(url_uuids_query_string, url, url_len);
+  strncat(url_uuids_query_string, dwi->uuids[GROUP_UUID], group_uuid_len);
   strcat(url_uuids_query_string, "/");
-  strcat(url_uuids_query_string, dwi->uuids[SOURCE_UUID]);
+  strncat(url_uuids_query_string, dwi->uuids[SOURCE_UUID], source_uuid_len);
   strcat(url_uuids_query_string, "/");
-  strcat(url_uuids_query_string, query_string);
+  strncat(url_uuids_query_string, query_string, query_string_len);
   // url_uuids_query_string should now look like: http://ip_addr:port/group_uuid/source_uuid/query_string
+
+#ifdef VERBOSE
+  printf("Built url_uuids_query_string: %s\n", url_uuids_query_string);
+#endif
 
   char *response = GET_request(dwi, url_uuids_query_string);
 
   // Write the received information to an output file.
   if (out_filepath) {
+#ifdef VERBOSE
+    printf("Writing to file: %s\n", out_filepath);
+#endif
     fputs(response, outfp);
-  }
-
-  if (out_filepath) {
     fclose(outfp);
   }
+
   free(url);
   free(url_uuids_query_string);
   return response;
@@ -583,14 +615,14 @@ char *dw_interface_query_data(const DWInterface *dwi,
  * This function frees up all the memory allocated by the DWInterface struct and its fields.
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that needs to be destroyed.
- * Return value:
- *   None
  */
 void dw_interface_destroy(DWInterface *dwi) {
   if (!dwi) {
     PANIC(dw_interface_create() must be called first);
   }
-  free(GLOBAL_AUTHORITY);
+#ifdef VERBOSE
+  printf("Destroying DWInterface...");
+#endif
   curl_easy_cleanup(dwi->curl_handle);
   free(dwi->username);
   free(dwi->password);

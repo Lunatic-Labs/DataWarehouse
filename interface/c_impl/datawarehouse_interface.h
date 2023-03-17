@@ -1,23 +1,9 @@
+#include "_datawarehouse_utils_INTERNAL.h"
+
 #ifndef DATAWAREHOUSE_INTERFACE
 #define DATAWAREHOUSE_INTERFACE
 
 typedef struct DWInterface DWInterface;
-
-// Ports. This is to determine which database we will
-// be sending information to/from. We will mostly be
-// working in PORT_DEV.
-enum PORT {
-  PORT_DEV,
-  PORT_STAGING,
-  PORT_PROD,
-};
-
-// Environments. Use ENV_LOCAL if the server is
-// running locally.
-enum ENV {
-  ENV_LOCAL,
-  ENV_REMOTE
-};
 
 // Creates a new instance of the DWInterface struct.
 // It takes a username and password and puts them in the DWInterface.

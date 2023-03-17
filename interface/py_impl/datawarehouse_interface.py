@@ -33,15 +33,40 @@ class DWInterface:
         self.__handshake_url = self.__authority + self.handshake_path
         self.__insert_url = self.__authority + self.insert_path
         self.__query_url = self.__authority + self.query_path
+        self.__curl_handle = pycurl.Curl()
 
     # Private Functions.
 
-    def __POSTRequest(self, url, json_file):
+    def __POSTRequest(self, url, json_filepath, out_filepath):
         '''
         This function should not return anything.
         curl_handle.setopt(pycurl.HTTPPOST, [('fileupload', (pycurl.FORM_FILE, json_file)), ('string', 'string_value')])
         '''
-        pass
+        outfp = None
+
+        # Open the file if it is specified.
+        if (out_filepath != None):
+            outfp = open(out_filepath, "w")
+
+        # Create a buffer to recieve data.
+        buf = BytesIO()
+
+        # Create CURL handle.
+        self.__curl_handle = pycurl.Curl()
+        self.__curl_handle.setopt(self.__curl_handle.URL, url)
+        self.__curl_handle.setopt(self.__curl_handle.HTTPPOST, [('fileupload', (self.__curl_handle.FORM_FILE, json_filepath))])
+        self.__curl_handle.perform()
+        self.__curl_handle.close()
+
+        # Get the response from the buffer and decode.
+        body = buf.getvalue()
+        response = body.decode('iso-8859-1')
+
+        # Write to a file if an outfile is specified.
+        if (out_filepath != None):
+            outfp.write(response)
+
+        return response
 
     def __GETRequest(self, query_string, out_filepath):
         '''
@@ -49,12 +74,14 @@ class DWInterface:
         '''
         outfp = None
 
+        # Check to make sure the UUIDs have been set.
         if (self.__group_uuid is None or self.__source_uuid is None or self.__metric_uuid is None):
             raise ValueError('UUIDs must be set')
 
         if (query_string[0] != '?'):
             raise ValueError('Query string must start with `?`')
 
+        # Open the file if it is specified.
         if (out_filepath != None):
             outfp = open(out_filepath, "w")
 
@@ -64,25 +91,25 @@ class DWInterface:
         # Create a buffer to recieve data.
         buf = BytesIO()
 
-        # Create CURL handle.
-        curl_handle = pycurl.Curl()
-
         # Set CURL options.
-        curl_handle.setopt(curl_handle.URL, url)
-        curl_handle.setopt(curl_handle.WRITEDATA, buf)
-        curl_handle.setopt(curl_handle.CAINFO, certifi.where())
-        curl_handle.setopt(pycurl.HTTPGET, 1)
+        self.__curl_handle.setopt(self.__curl_handle.URL, url)
+        self.__curl_handle.setopt(self.__curl_handle.WRITEDATA, buf)
+        self.__curl_handle.setopt(self.__curl_handle.CAINFO, certifi.where())
+        self.__curl_handle.setopt(pycurl.HTTPGET, 1)
 
         # Perform CURL and cleanup.
-        curl_handle.perform()
-        curl_handle.close()
+        self.__curl_handle.perform()
+        self.__curl_handle.close()
 
         # Get the response from the buffer and decode.
         body = buf.getvalue()
         response = body.decode('iso-8859-1')
+
+        # Write to a file if an outfile is specified.
         if (out_filepath != None):
             outfp.write(response)
-        return response # TODO: Need to find out the encoding from server.
+
+        return response
 
     def __verifyUUID(self, unverified_uuid):
         try:
@@ -114,9 +141,9 @@ if __name__ == '__main__': # Use this for running code, testing, debugging, etc.
     guuid = 'c85ad1d4-2147-44eb-ba30-3206f26d6569'
     suuid = '3d276782-6656-4e5e-b41c-6236ac86a021'
     muuid = '75b9d8f7-9e39-47b5-909a-76d0e2c9cb13'
+
     dw = DWInterface('usr', 'pass')
     dw.setUUIDs(guuid, suuid, muuid)
-    print(dw.queryData('?limit=1'))
 
 # Good job with this, it'll be useful.
 #post_request() is called within commit_handshake() and insert_data().

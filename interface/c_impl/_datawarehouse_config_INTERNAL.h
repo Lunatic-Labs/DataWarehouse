@@ -1,3 +1,11 @@
+/*
+ * This is the config file for the DataWarehouse interface.
+ * This file is for preprocessor macros for easy updates.
+ * This file is for internal use only.
+ */
+
+/* Constants */
+
 // IP address for the EC2 instance.
 #define REMOTE_IP_ADDR "44.204.92.26"
 
@@ -20,6 +28,8 @@
 // Enable or disable this macro in order to print verbose steps
 // in datawarehouse_interface.c. Intended for debugging purposes.
 #define VERBOSE
+
+/* Libraries */
 
 #include <assert.h> // Debugging. Should not be in release.
 #include <errno.h>  // Error handling.

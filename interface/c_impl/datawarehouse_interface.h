@@ -1,3 +1,9 @@
+/*
+ * This is the function declarations for the DataWarehouse interface.
+ * This file provides declarations for functions that the interface supports.
+ * This file is for external use.
+ */
+
 #include "_datawarehouse_utils_INTERNAL.h"
 
 #ifndef DATAWAREHOUSE_INTERFACE

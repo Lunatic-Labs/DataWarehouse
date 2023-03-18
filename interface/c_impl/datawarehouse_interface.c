@@ -389,7 +389,7 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 #endif
 
   // Get the file data.
-  file_data = malloc(file_size + 1);
+  file_data = s_malloc(file_size + 1);
   if (!fread(file_data, 1, file_size, json_file)) {
     fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
             strerror(errno));
@@ -425,6 +425,7 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 
   curl_slist_free_all(headers);
   free(buf.data);
+  free(file_data);
   return response;
 }
 
@@ -621,8 +622,9 @@ void dw_interface_destroy(DWInterface *dwi) {
     PANIC(dw_interface_create() must be called first);
   }
 #ifdef VERBOSE
-  printf("Destroying DWInterface...");
+  printf("Destroying DWInterface...\n");
 #endif
+  free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
   free(dwi->username);
   free(dwi->password);

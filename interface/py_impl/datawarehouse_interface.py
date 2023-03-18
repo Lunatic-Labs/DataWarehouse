@@ -10,7 +10,7 @@ import uuid
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
 class DWInterface:
-    remote_ip_address = '44.204.92.26'
+    remote_ip_address = '3.216.190.202'
     local_ip_address = '127.0.0.1'
 
     handshake_path = '/api/prepare/'

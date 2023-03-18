@@ -119,7 +119,7 @@ static int verify_uuid(const char *uuid) {
  *   A buffer_t structure with an allocated data array of size m, a size of 0,
  *   and a max of m.
  */
-struct buffer_t buffer_t_create(size_t m) {
+static struct buffer_t buffer_t_create(size_t m) {
   struct buffer_t buff;
   buff.data = s_malloc(m * sizeof(char));
   buff.size = 0;
@@ -249,94 +249,6 @@ static char *construct_url(const char *path) {
   return url;
 }
 
-/*
- * dw_interface_create: A function that creates and initializes a DWInterface
- * structure. It also initializes the libcurl library and creates a curl handle.
- * Parameters:
- *   username: A string containing the username for the DWInterface.
- *   password: A string containing the password for the DWInterface.
- * Returns:
- *   A pointer to a DWInterface structure with allocated and copied username and
- *   password fields, and a curl handle. If username or password are empty
- *   strings, PANIC() is called and the program exits.
- */
-DWInterface *dw_interface_create(const char *username,
-                                 const char *password,
-                                 enum ENV env,
-                                 enum PORT port) {
-  size_t usr_len  = strlen(username);
-  size_t pass_len = strlen(password);
-
-  if (!usr_len || !pass_len) {
-    PANIC(Username and password length must be at least 1);
-  }
-
-  DWInterface *dwi = s_malloc(sizeof(DWInterface));
-
-  // Copy over username and password.
-  dwi->username = s_malloc(usr_len  + 1);
-  dwi->password = s_malloc(pass_len + 1);
-
-  strcpy(dwi->username, username);
-  strcpy(dwi->password, password);
-
-#ifdef VERBOSE
-  printf("Set username: %s and password: %s\n", username, password);
-#endif
-
-  // Init curl/curl.h library.
-  curl_global_init(CURL_GLOBAL_ALL);
-
-  // Create curl.
-  dwi->curl_handle = curl_easy_init();
-
-  dwi->env  = env;
-  dwi->port = port;
-
-  // Set all UUIDs blank.
-  dwi->uuids[0][0] = '\0';
-  dwi->uuids[1][0] = '\0';
-  dwi->uuids[2][0] = '\0';
-
-#ifdef VERBOSE
-  printf("Building GLOBAL_AUTHORITY...\n");
-#endif
-
-  // Build the GLOBAL_AUTHORITY.
-  build_GLOBAL_AUTHORITY(dwi);
-
-  return dwi;
-}
-
-void dw_interface_set_uuids(DWInterface *dwi,
-                            const char group_uuid[UUID_LEN],
-                            const char source_uuid[UUID_LEN],
-                            const char metric_uuid[UUID_LEN]) {
-#ifdef VERBOSE
-  printf("Verifying UUIDs:\n\t%s\n\t%s\n\t%s\n", group_uuid, source_uuid, metric_uuid);
-#endif
-
-  if (verify_uuid(group_uuid) != 0) {
-    PANIC(Invalid group_uuid);
-  }
-  if (verify_uuid(source_uuid) != 0) {
-    PANIC(Invalid source_uuid);
-  }
-  if (verify_uuid(metric_uuid) != 0) {
-    PANIC(Invalid metric_uuid);
-  }
-
-#ifdef VERBOSE
-  printf("Copying UUIDs\n");
-#endif
-
-  // Copy UUIDs into DWInterface instance.
-  strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
-  strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
-  strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
-
-}
-
 static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
   char *response = s_malloc(buf_sz + 1);
   strncpy(response, buf_data, buf_sz);
@@ -430,7 +342,7 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 }
 
 // Perform a GET request.
-char *GET_request(const DWInterface *dwi, const char *url) {
+static char *GET_request(const DWInterface *dwi, const char *url) {
 
 #ifdef VERBOSE
   printf("Performing GET request...\n");
@@ -457,6 +369,93 @@ char *GET_request(const DWInterface *dwi, const char *url) {
 
   free(buf.data);
   return response;
+}
+
+/*
+ * dw_interface_create: A function that creates and initializes a DWInterface
+ * structure. It also initializes the libcurl library and creates a curl handle.
+ * Parameters:
+ *   username: A string containing the username for the DWInterface.
+ *   password: A string containing the password for the DWInterface.
+ * Returns:
+ *   A pointer to a DWInterface structure with allocated and copied username and
+ *   password fields, and a curl handle. If username or password are empty
+ *   strings, PANIC() is called and the program exits.
+ */
+DWInterface *dw_interface_create(const char *username,
+                                 const char *password,
+                                 enum ENV env,
+                                 enum PORT port) {
+  size_t usr_len  = strlen(username);
+  size_t pass_len = strlen(password);
+
+  if (!usr_len || !pass_len) {
+    PANIC(Username and password length must be at least 1);
+  }
+
+  DWInterface *dwi = s_malloc(sizeof(DWInterface));
+
+  // Copy over username and password.
+  dwi->username = s_malloc(usr_len  + 1);
+  dwi->password = s_malloc(pass_len + 1);
+
+  strcpy(dwi->username, username);
+  strcpy(dwi->password, password);
+
+#ifdef VERBOSE
+  printf("Set username: %s and password: %s\n", username, password);
+#endif
+
+  // Init curl/curl.h library.
+  curl_global_init(CURL_GLOBAL_ALL);
+
+  // Create curl.
+  dwi->curl_handle = curl_easy_init();
+
+  dwi->env  = env;
+  dwi->port = port;
+
+  // Set all UUIDs blank.
+  dwi->uuids[0][0] = '\0';
+  dwi->uuids[1][0] = '\0';
+  dwi->uuids[2][0] = '\0';
+
+#ifdef VERBOSE
+  printf("Building GLOBAL_AUTHORITY...\n");
+#endif
+
+  // Build the GLOBAL_AUTHORITY.
+  build_GLOBAL_AUTHORITY(dwi);
+
+  return dwi;
+}
+
+void dw_interface_set_uuids(DWInterface *dwi,
+                            const char group_uuid[UUID_LEN],
+                            const char source_uuid[UUID_LEN],
+                            const char metric_uuid[UUID_LEN]) {
+#ifdef VERBOSE
+  printf("Verifying UUIDs:\n\t%s\n\t%s\n\t%s\n", group_uuid, source_uuid, metric_uuid);
+#endif
+
+  if (verify_uuid(group_uuid) != 0) {
+    PANIC(Invalid group_uuid);
+  }
+  if (verify_uuid(source_uuid) != 0) {
+    PANIC(Invalid source_uuid);
+  }
+  if (verify_uuid(metric_uuid) != 0) {
+    PANIC(Invalid metric_uuid);
+  }
+
+#ifdef VERBOSE
+  printf("Copying UUIDs\n");
+#endif
+
+  // Copy UUIDs into DWInterface instance.
+  strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
+  strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
+  strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
 
 /*

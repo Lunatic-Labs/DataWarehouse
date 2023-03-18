@@ -7,7 +7,7 @@
 /* Constants */
 
 // IP address for the EC2 instance.
-#define REMOTE_IP_ADDR "44.204.92.26"
+#define REMOTE_IP_ADDR "3.216.190.202"
 
 // IP address for localhost.
 #define LOCAL_IP_ADDR  "127.0.0.1"

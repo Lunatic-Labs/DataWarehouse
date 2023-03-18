@@ -145,12 +145,22 @@ class DWInterface:
 
     # Public Functions.
 
-    def commitHandshake(self, handshake_json):
+    def commitHandshake(self, handshake_json, out_file_path=None):
         infp = open(handshake_json, "r")
-        url = self.__handshake_url
 
+        # Checks to see if out file was provided and opens it as writeable
+        if out_file_path:
+            out_file_path = open(out_file_path, "w")
+
+        url = self.__handshake_url
         # Perform Post request. (Not sure if self is the dwi parameter in c version)
         response = self.__POSTRequest(self, url, infp)
+
+        # Checks to see if out file was provided and writes the response to the file
+        if out_file_path:
+            print("Writing to file: " + out_file_path, end="\n")
+            out_file_path.write(response)
+            out_file_path.close()
 
         infp.close()
 

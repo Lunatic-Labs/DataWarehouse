@@ -7,9 +7,9 @@ import pycurl
 from io import BytesIO
 import certifi
 import uuid
+import json
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
-
 
 class DWInterface:
     remote_ip_address = "3.216.190.202"
@@ -48,12 +48,17 @@ class DWInterface:
 
     # Private Functions.
 
-    def __POSTRequest(self, url, json_filepath, out_filepath):
+    def __POSTRequest(self, json_filepath, out_filepath):
         """
-        This function should not return anything.
-        curl_handle.setopt(pycurl.HTTPPOST, [('fileupload', (pycurl.FORM_FILE, json_file)), ('string', 'string_value')])
+        This function should return the data from commitHandshake()
+        as there is no need to return anything from insertData().
         """
         outfp = None
+        json_file = None
+        with open(json_filepath) as f:
+            json_file = json.load(f)
+
+        print(json.dumps(json_file))
 
         # Open the file if it is specified.
         if out_filepath != None:
@@ -62,19 +67,14 @@ class DWInterface:
         # Create a buffer to recieve data.
         buf = BytesIO()
 
-        # Create CURL handle.
-        self.__curl_handle = pycurl.Curl()
-        self.__curl_handle.setopt(self.__curl_handle.URL, url)
-        self.__curl_handle.setopt(
-            self.__curl_handle.HTTPPOST,
-            [("fileupload", (self.__curl_handle.FORM_FILE, json_filepath))],
-        )
-        self.__curl_handle.perform()
-        self.__curl_handle.close()
+        self.__curl_handle.setopt(self.__curl_handle.URL, self.__handshake_url)
+        self.__curl_handle.setopt(pycurl.HTTPHEADER, ['Content-Type: application/json'])
+        self.__curl_handle.setopt(self.__curl_handle.POSTFIELDS, json.dumps(json_file))
+        self.__curl_handle.setopt(self.__curl_handle.WRITEFUNCTION, lambda x: None)
 
-        # Get the response from the buffer and decode.
-        body = buf.getvalue()
-        response = body.decode("iso-8859-1")
+        # Perform the CURL.
+        response = self.__curl_handle.perform_rs()
+        self.__curl_handle.close()
 
         # Write to a file if an outfile is specified.
         if out_filepath != None:
@@ -146,28 +146,10 @@ class DWInterface:
     # Public Functions.
 
     def commitHandshake(self, handshake_json, out_file_path=None):
-        infp = open(handshake_json, "r")
-
-        # Checks to see if out file was provided and opens it as writeable
-        if out_file_path:
-            out_file_path = open(out_file_path, "w")
-
-        url = self.__handshake_url
-        # Perform Post request. (Not sure if self is the dwi parameter in c version)
-        response = self.__POSTRequest(self, url, infp)
-
-        # Checks to see if out file was provided and writes the response to the file
-        if out_file_path:
-            print("Writing to file: " + out_file_path, end="\n")
-            out_file_path.write(response)
-            out_file_path.close()
-
-        infp.close()
-
-        return response
+        return self.__POSTRequest(handshake_json, out_file_path)
 
     def insertData(self, insert_json):
-        pass
+        self.__POSTRequest(insert_json, None)
 
     def queryData(self, query_string, out_file=None):
         return self.__GETRequest(query_string, out_file)
@@ -186,45 +168,15 @@ class DWInterface:
 
 
 if __name__ == "__main__":  # Use this for running code, testing, debugging, etc.
-    guuid = "c85ad1d4-2147-44eb-ba30-3206f26d6569"
-    suuid = "3d276782-6656-4e5e-b41c-6236ac86a021"
-    muuid = "75b9d8f7-9e39-47b5-909a-76d0e2c9cb13"
+    guuid = "2632e2c8-a9ef-4c59-b555-edf5d5a51dfe"
+    suuid = "99113101-f382-4c1f-a687-96479237cac8"
+    muuid = "f909dddb-15c1-466a-88f2-7975fa494f65"
 
     dw = DWInterface("usr", "pass")
+    # dw.commitHandshake("../../../handshake.json", "handshake.out")
     dw.setUUIDs(guuid, suuid, muuid)
+    dw.insertData("../../../insert.json")
 
-# Good job with this, it'll be useful.
-# post_request() is called within commit_handshake() and insert_data().
-# This seems to be where the gruntwork of POSTing using PycURL happens.
-# post_request(dwi, url, json_file)
-# {
-#     c = pycurl.Curl()
-#     c.setopt(c.URL, url)
 
-#     #Set the content type header to application/json.
-#     c.setopt(c.HTTPPOST, [
-#     ('fileupload', (
-#         c.FORM_BUFFER, json_file,
-#         c.FORM_CONTENTTYPE, 'Content-Type: application/json',
-#     )),
-#     ])
 
-#     #Get the file data and set the request body to these contents.
-#     try
-#         file_data = open(json_file, 'r')
-#     except IOError
-#         PANIC('Post_request() failed to read file contents')
-#         exit(1)
-#     c.setopt(c.POSTFIELDS, urlencode(file_data.read()))    #data must be urlencoded for PycURL
 
-#     #get the size of the file and set the request body size to match.
-#     json_file.seek(0, os.SEEK_END)
-#     file_size = json_file.tell()
-#     c.setopt(c.POSTFIELDSIZE, file_size)
-
-#     c.perform()
-#     c.close()
-#     file_data.close()
-
-#     #NEED TO: assign and return a response? What is it, and why are we returning it?
-# }

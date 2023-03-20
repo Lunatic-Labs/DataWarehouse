@@ -119,7 +119,7 @@ static int verify_uuid(const char *uuid) {
  *   A buffer_t structure with an allocated data array of size m, a size of 0,
  *   and a max of m.
  */
-struct buffer_t buffer_t_create(size_t m) {
+static struct buffer_t buffer_t_create(size_t m) {
   struct buffer_t buff;
   buff.data = s_malloc(m * sizeof(char));
   buff.size = 0;
@@ -249,6 +249,128 @@ static char *construct_url(const char *path) {
   return url;
 }
 
+static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
+  char *response = s_malloc(buf_sz + 1);
+  strncpy(response, buf_data, buf_sz);
+  response[buf_sz] = '\0';
+
+#ifdef VERBOSE
+  printf("Copied buffer data\n");
+#endif
+
+  return response;
+}
+
+static void perform_curl_and_check(CURLcode code) {
+  if (code != CURLE_OK) {
+    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
+            curl_easy_strerror(code));
+    PANIC();
+  }
+
+#ifdef VERBOSE
+  printf("CURL performed successfully\n");
+#endif
+}
+
+// Perform a POST request.
+static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
+  char *file_data            = NULL;
+  struct curl_slist *headers = NULL;
+  size_t file_size;
+
+#ifdef VERBOSE
+  printf("Performing POST request with URL: %s\n", url);
+#endif
+
+  // Set the url and POST option.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
+
+  // Set the content type header to application/json.
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
+
+  // Get the size of the file.
+  fseek(json_file, 0, SEEK_END);
+  file_size = ftell(json_file);
+  rewind(json_file);
+
+#ifdef VERBOSE
+  printf("Got file size: %zu\n", file_size);
+#endif
+
+  // Get the file data.
+  file_data = s_malloc(file_size + 1);
+  if (!fread(file_data, 1, file_size, json_file)) {
+    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
+            strerror(errno));
+    PANIC();
+  }
+  file_data[file_size] = '\0';
+
+#ifdef VERBOSE
+  printf("Got file data\n");
+#endif
+
+  struct buffer_t buf = buffer_t_create(1024);
+
+  // Set options for writing data.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+
+  // Set the request body to the file contents.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
+
+  // Set the request body size to the size of the file.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
+
+#ifdef VERBOSE
+  printf("Performing CURL...\n");
+#endif
+
+  // Perform CURL and check for failure.
+  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
+
+  // Copy the buffer data into response.
+  char *response = copy_buffer_data(buf.data, buf.size);
+
+  curl_slist_free_all(headers);
+  free(buf.data);
+  free(file_data);
+  return response;
+}
+
+// Perform a GET request.
+static char *GET_request(const DWInterface *dwi, const char *url) {
+
+#ifdef VERBOSE
+  printf("Performing GET request...\n");
+#endif
+
+  struct buffer_t buf = buffer_t_create(1024);
+
+  // Set the options for curl.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           url);
+
+  // Allow redirects.
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
+
+#ifdef VERBOSE
+  printf("Performing CURL...\n");
+#endif
+  // Perform CURL and check for failure.
+  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
+
+  // Copy the buffer data into response.
+  char *response = copy_buffer_data(buf.data, buf.size);
+
+  free(buf.data);
+  return response;
+}
+
 /*
  * dw_interface_create: A function that creates and initializes a DWInterface
  * structure. It also initializes the libcurl library and creates a curl handle.
@@ -334,128 +456,6 @@ void dw_interface_set_uuids(DWInterface *dwi,
   strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
   strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
   strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
-
-}
-
-static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
-  char *response = s_malloc(buf_sz + 1);
-  strncpy(response, buf_data, buf_sz);
-  response[buf_sz] = '\0';
-
-#ifdef VERBOSE
-  printf("Copied buffer data\n");
-#endif
-
-  return response;
-}
-
-static void perform_curl_and_check(CURLcode code) {
-  if (code != CURLE_OK) {
-    fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
-            curl_easy_strerror(code));
-    PANIC();
-  }
-
-#ifdef VERBOSE
-  printf("CURL performed successfully\n");
-#endif
-}
-
-// Perform a POST request.
-static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
-  char *file_data            = NULL;
-  struct curl_slist *headers = NULL;
-  size_t file_size;
-
-#ifdef VERBOSE
-  printf("Performing POST request with URL: %s\n", url);
-#endif
-
-  // Set the url and POST option.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
-
-  // Set the content type header to application/json.
-  headers = curl_slist_append(headers, "Content-Type: application/json");
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_HTTPHEADER, headers);
-
-  // Get the size of the file.
-  fseek(json_file, 0, SEEK_END);
-  file_size = ftell(json_file);
-  rewind(json_file);
-
-#ifdef VERBOSE
-  printf("Got file size: %zu\n", file_size);
-#endif
-
-  // Get the file data.
-  file_data = malloc(file_size + 1);
-  if (!fread(file_data, 1, file_size, json_file)) {
-    fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
-            strerror(errno));
-    PANIC();
-  }
-  file_data[file_size] = '\0';
-
-#ifdef VERBOSE
-  printf("Got file data\n");
-#endif
-
-  struct buffer_t buf = buffer_t_create(1024);
-
-  // Set options for writing data.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-
-  // Set the request body to the file contents.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
-
-  // Set the request body size to the size of the file.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDSIZE, file_size);
-
-#ifdef VERBOSE
-  printf("Performing CURL...\n");
-#endif
-
-  // Perform CURL and check for failure.
-  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
-
-  // Copy the buffer data into response.
-  char *response = copy_buffer_data(buf.data, buf.size);
-
-  curl_slist_free_all(headers);
-  free(buf.data);
-  return response;
-}
-
-// Perform a GET request.
-char *GET_request(const DWInterface *dwi, const char *url) {
-
-#ifdef VERBOSE
-  printf("Performing GET request...\n");
-#endif
-
-  struct buffer_t buf = buffer_t_create(1024);
-
-  // Set the options for curl.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           url);
-
-  // Allow redirects.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-
-#ifdef VERBOSE
-  printf("Performing CURL...\n");
-#endif
-  // Perform CURL and check for failure.
-  perform_curl_and_check(curl_easy_perform(dwi->curl_handle));
-
-  // Copy the buffer data into response.
-  char *response = copy_buffer_data(buf.data, buf.size);
-
-  free(buf.data);
-  return response;
 }
 
 /*
@@ -621,8 +621,9 @@ void dw_interface_destroy(DWInterface *dwi) {
     PANIC(dw_interface_create() must be called first);
   }
 #ifdef VERBOSE
-  printf("Destroying DWInterface...");
+  printf("Destroying DWInterface...\n");
 #endif
+  free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
   free(dwi->username);
   free(dwi->password);

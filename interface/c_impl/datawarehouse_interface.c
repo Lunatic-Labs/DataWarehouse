@@ -367,6 +367,14 @@ Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *uni
   return metric;
 }
 
+void dw_interface_push_source(Group *group, Source *source) {
+  UNIMPLEMENTED;
+}
+
+void dw_interface_push_metric(Group *group, Metric *metric) {
+  UNIMPLEMENTED;
+}
+
 /*
  * dw_interface_create: A function that creates and initializes a DWInterface
  * structure. It also initializes the libcurl library and creates a curl handle.
@@ -409,6 +417,8 @@ DWInterface *dw_interface_create(char *username,
   dwi->uuids[1][0] = '\0';
   dwi->uuids[2][0] = '\0';
 
+  dwi->groups = NULL;
+
 #ifdef VERBOSE
   printf("Building GLOBAL_AUTHORITY...\n");
 #endif
@@ -417,6 +427,10 @@ DWInterface *dw_interface_create(char *username,
   build_GLOBAL_AUTHORITY(dwi);
 
   return dwi;
+}
+
+void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
+  dwi->groups = groups;
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
@@ -614,5 +628,6 @@ void dw_interface_destroy(DWInterface *dwi) {
 #endif
   free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
+
   free(dwi);
 }

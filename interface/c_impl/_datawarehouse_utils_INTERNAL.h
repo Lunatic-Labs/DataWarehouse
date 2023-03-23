@@ -21,7 +21,7 @@
 #define NOP(x) (void)(x);
 
 // Put in functions to crash at unimplemented features.
-#define UNIMPLEMENTED  printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
+#define UNIMPLEMENTED printf("Unimplemented: %s at line %d\n", __func__, __LINE__); \
   exit(EXIT_FAILURE);
 
 // Check if the UUIDs have been set.
@@ -87,6 +87,28 @@ enum Datatypes {
 
 /* Structs */
 
+typedef struct Metric {
+  int   asc;
+  int   data_type;
+  char *name;
+  char *units;
+} Metric;
+
+typedef struct Source {
+  char   *name;
+  Metric *metrics; // TODO: Make a dynamic array.
+  size_t metrics_len;
+  size_t metrics_cap;
+} Source;
+
+typedef struct Group {
+  char   *classification;
+  char   *group_name;
+  Source *sources; // TODO: Make a dynamic array.
+  size_t sources_len;
+  size_t sources_cap;
+} Group;
+
 /*
  * DWInterface: A structure that represents a DataWarehouse interface. It contains
  * fields for the username and password of the user, and a curl handle for
@@ -97,6 +119,7 @@ typedef struct DWInterface {
   char *password;
   CURL *curl_handle;
   char uuids[3][UUID_LEN + 1];
+  Group *groups;
   enum ENV env;
   enum PORT port;
 } DWInterface;
@@ -114,23 +137,4 @@ struct buffer_t {
   size_t size;
   size_t max;
 };
-
-typedef struct Metric {
-  int   asc;
-  int   data_type;
-  char *name;
-  char *units;
-} Metric;
-
-typedef struct Source {
-  char   *name;
-  Metric *metrics;
-} Source;
-
-typedef struct Group {
-  char   *classification;
-  char   *group_name;
-  Source *sources;
-} Group;
-
 

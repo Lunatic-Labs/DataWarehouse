@@ -10,7 +10,7 @@ int main(void) {
   Source *s = dw_interface_source_create("Python Class Stats", m);
   Group  *g = dw_interface_group_create("Academia", "My University", s);
 
-
+  dw_interface_set_groups(dwi, g);
 
   dw_interface_destroy(dwi);
   return 0;

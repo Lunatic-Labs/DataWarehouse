@@ -62,3 +62,23 @@ enum ENV {
 enum ErrorCode {
   OK = 1,
 };
+
+typedef struct Metric {
+  int   asc;
+  int   data_type;
+  char *name;
+  char *units;
+} Metric;
+
+typedef struct Source {
+  char   *name;
+  Metric *metrics;
+} Source;
+
+typedef struct Group {
+  char   *classification;
+  char   *group_name;
+  Source *sources;
+} Group;
+
+

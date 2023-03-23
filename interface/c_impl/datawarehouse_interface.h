@@ -65,4 +65,10 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string, 
 // will PANIC if DWInterface has not been initialized.
 void dw_interface_destroy(DWInterface *dwi);
 
+Group *dw_interface_group_create(char *classification, char *group_name, Source *sources);
+
+Source *dw_interface_source_create(char *name, Metric *metrics);
+
+Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *units);
+
 #endif // DATAWAREHOUSE_INTERFACE

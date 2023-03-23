@@ -371,6 +371,30 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
+Group *dw_interface_group_create(char *classification, char *group_name, Source *sources) {
+  Group *group          = s_malloc(sizeof(Group));
+  group->classification = classification;
+  group->group_name     = group_name;
+  group->sources        = sources;
+  return group;
+}
+
+Source *dw_interface_source_create(char *name, Metric *metrics) {
+  Source *source  = s_malloc(sizeof(Source));
+  source->name    = name;
+  source->metrics = metrics;
+  return source;
+}
+
+Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *units) {
+  Metric *metric    = s_malloc(sizeof(Metric));
+  metric->asc       = asc;
+  metric->data_type = data_type;
+  metric->name      = name;
+  metric->units     = units;
+  return metric;
+}
+
 /*
  * dw_interface_create: A function that creates and initializes a DWInterface
  * structure. It also initializes the libcurl library and creates a curl handle.

@@ -63,6 +63,25 @@ enum ErrorCode {
   OK = 1,
 };
 
+enum Datatypes {
+  TEXT         = 1,
+  TUPLETYPE    = 2,
+  STRING       = 3,
+  INTEGER      = 4,
+  SMALLINTEGER = 5,
+  BIGINTEGER   = 6,
+  NUMERIC      = 7,
+  FLOAT        = 8,
+  DATETIME     = 9,
+  DATE         = 10,
+  TIME         = 11,
+  LARGEBINARY  = 12,
+  BOOLEAN      = 13,
+  UNICODE      = 14,
+  UNICODETEXT  = 15,
+  INTERVAL     = 16,
+};
+
 typedef struct Metric {
   int   asc;
   int   data_type;

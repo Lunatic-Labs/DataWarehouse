@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <curl/curl.h>
+
 /*
  * This is the utilities file for the DataWarehouse interface.
  * This file is for help during development as well as enums.
@@ -80,6 +83,36 @@ enum Datatypes {
   UNICODE      = 14,
   UNICODETEXT  = 15,
   INTERVAL     = 16,
+};
+
+/* Structs */
+
+/*
+ * DWInterface: A structure that represents a DataWarehouse interface. It contains
+ * fields for the username and password of the user, and a curl handle for
+ * making HTTP requests to the DataWarehouse server.
+ */
+typedef struct DWInterface {
+  char *username;
+  char *password;
+  CURL *curl_handle;
+  char uuids[3][UUID_LEN + 1];
+  enum ENV env;
+  enum PORT port;
+} DWInterface;
+
+/*
+ * buffer_t: A structure that represents a dynamic buffer of characters. It
+ * contains fields for the data array, the current size of the buffer, and the
+ * maximum size of the buffer. The data array is allocated and resized using
+ * s_malloc and s_realloc functions. The size field indicates how many bytes are
+ * currently stored in the buffer. The max field indicates how many bytes can be
+ * stored in the buffer without resizing it.
+ */
+struct buffer_t {
+  char  *data;
+  size_t size;
+  size_t max;
 };
 
 typedef struct Metric {

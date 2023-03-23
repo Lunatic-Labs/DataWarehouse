@@ -5,34 +5,6 @@
 char *GLOBAL_AUTHORITY;
 
 /*
- * buffer_t: A structure that represents a dynamic buffer of characters. It
- * contains fields for the data array, the current size of the buffer, and the
- * maximum size of the buffer. The data array is allocated and resized using
- * s_malloc and s_realloc functions. The size field indicates how many bytes are
- * currently stored in the buffer. The max field indicates how many bytes can be
- * stored in the buffer without resizing it.
- */
-struct buffer_t {
-  char  *data;
-  size_t size;
-  size_t max;
-};
-
-/*
- * DWInterface: A structure that represents a DataWarehouse interface. It contains
- * fields for the username and password of the user, and a curl handle for
- * making HTTP requests to the DataWarehouse server.
- */
-typedef struct DWInterface {
-  char *username;
-  char *password;
-  CURL *curl_handle;
-  char uuids[3][UUID_LEN + 1];
-  enum ENV env;
-  enum PORT port;
-} DWInterface;
-
-/*
  * s_malloc: A wrapper function for malloc that checks for allocation errors
  * and exits the program if any occur.
  * Parameters:
@@ -406,25 +378,18 @@ Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *uni
  *   password fields, and a curl handle. If username or password are empty
  *   strings, PANIC() is called and the program exits.
  */
-DWInterface *dw_interface_create(const char *username,
-                                 const char *password,
+DWInterface *dw_interface_create(char *username,
+                                 char *password,
                                  enum ENV env,
                                  enum PORT port) {
-  size_t usr_len  = strlen(username);
-  size_t pass_len = strlen(password);
-
-  if (!usr_len || !pass_len) {
+  if (!strlen(username) || !strlen(password)) {
     PANIC(Username and password length must be at least 1);
   }
 
   DWInterface *dwi = s_malloc(sizeof(DWInterface));
 
-  // Copy over username and password.
-  dwi->username = s_malloc(usr_len  + 1);
-  dwi->password = s_malloc(pass_len + 1);
-
-  strcpy(dwi->username, username);
-  strcpy(dwi->password, password);
+  dwi->username = username;
+  dwi->password = password;
 
 #ifdef VERBOSE
   printf("Set username: %s and password: %s\n", username, password);
@@ -649,7 +614,5 @@ void dw_interface_destroy(DWInterface *dwi) {
 #endif
   free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
-  free(dwi->username);
-  free(dwi->password);
   free(dwi);
 }

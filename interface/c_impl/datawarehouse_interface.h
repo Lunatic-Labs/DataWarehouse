@@ -21,7 +21,7 @@ typedef struct DWInterface DWInterface;
 //   3. CURL failure.
 //   4. An invalid PORT is provided.
 //   5. An invalid ENV is provided.
-DWInterface *dw_interface_create(const char *username, const char *password, enum ENV env, enum PORT port);
+DWInterface *dw_interface_create(char *username, char *password, enum ENV env, enum PORT port);
 
 // Performs a handshake request on the database.
 // It will return the response from the POST request (your handshake data)

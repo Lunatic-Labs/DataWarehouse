@@ -66,7 +66,7 @@ enum ErrorCode {
   OK = 1,
 };
 
-enum Datatypes {
+typedef enum Datatype {
   TEXT         = 1,
   TUPLETYPE    = 2,
   STRING       = 3,
@@ -83,20 +83,20 @@ enum Datatypes {
   UNICODE      = 14,
   UNICODETEXT  = 15,
   INTERVAL     = 16,
-};
+} Datatype;
 
 /* Structs */
 
 typedef struct Metric {
-  int   asc;
-  int   data_type;
-  char *name;
-  char *units;
+  int       asc;
+  Datatype  data_type; // TODO: use the Datatype enum.
+  char      *name;
+  char      *units;
 } Metric;
 
 typedef struct Source {
   char   *name;
-  Metric *metrics; // TODO: Make a dynamic array.
+  Metric *metrics; // TODO: make a dynamic array.
   size_t metrics_len;
   size_t metrics_cap;
 } Source;
@@ -104,7 +104,7 @@ typedef struct Source {
 typedef struct Group {
   char   *classification;
   char   *group_name;
-  Source *sources; // TODO: Make a dynamic array.
+  Source *sources; // TODO: make a dynamic array.
   size_t sources_len;
   size_t sources_cap;
 } Group;
@@ -120,6 +120,8 @@ typedef struct DWInterface {
   CURL *curl_handle;
   char uuids[3][UUID_LEN + 1];
   Group *groups;
+  size_t groups_len;
+  size_t groups_cap;
   enum ENV env;
   enum PORT port;
 } DWInterface;

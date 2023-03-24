@@ -27,7 +27,7 @@
 
 // Enable or disable this macro in order to print verbose steps
 // in datawarehouse_interface.c. Intended for debugging purposes.
-#define VERBOSE
+// #define VERBOSE
 
 /* Libraries */
 

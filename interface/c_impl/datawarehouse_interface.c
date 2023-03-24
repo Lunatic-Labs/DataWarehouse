@@ -348,17 +348,21 @@ Group *dw_interface_group_create(char *classification, char *group_name, Source 
   group->classification = classification;
   group->group_name     = group_name;
   group->sources        = sources;
+  group->sources_len    = 0;
+  group->sources_cap    = 1;
   return group;
 }
 
 Source *dw_interface_source_create(char *name, Metric *metrics) {
-  Source *source  = s_malloc(sizeof(Source));
-  source->name    = name;
-  source->metrics = metrics;
+  Source *source       = s_malloc(sizeof(Source));
+  source->name         = name;
+  source->metrics      = metrics;
+  source->metrics_len  = 0;
+  source->metrics_cap  = 1;
   return source;
 }
 
-Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *units) {
+Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units) {
   Metric *metric    = s_malloc(sizeof(Metric));
   metric->asc       = asc;
   metric->data_type = data_type;
@@ -368,10 +372,14 @@ Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *uni
 }
 
 void dw_interface_push_source(Group *group, Source *source) {
+  NOP(group);
+  NOP(source);
   UNIMPLEMENTED;
 }
 
 void dw_interface_push_metric(Group *group, Metric *metric) {
+  NOP(group);
+  NOP(metric);
   UNIMPLEMENTED;
 }
 
@@ -418,6 +426,8 @@ DWInterface *dw_interface_create(char *username,
   dwi->uuids[2][0] = '\0';
 
   dwi->groups = NULL;
+  dwi->groups_len = 0;
+  dwi->groups_cap = 1;
 
 #ifdef VERBOSE
   printf("Building GLOBAL_AUTHORITY...\n");
@@ -629,5 +639,14 @@ void dw_interface_destroy(DWInterface *dwi) {
   free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
 
+  for (size_t i = 0; i < dwi->groups_len; i++) {
+    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
+      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
+	free(dwi->groups[i].sources[j].metrics);
+      }
+      free(dwi->groups[i].sources);
+    }
+    free(dwi->groups);
+  }
   free(dwi);
 }

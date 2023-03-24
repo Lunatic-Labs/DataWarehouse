@@ -1,6 +1,5 @@
 /*
  * This is the function declarations for the DataWarehouse interface.
- * This file provides declarations for functions that the interface supports.
  * This file is for external use.
  */
 
@@ -71,6 +70,10 @@ Group *dw_interface_group_create(char *classification, char *group_name, Source 
 
 Source *dw_interface_source_create(char *name, Metric *metrics);
 
-Metric *dw_interface_metric_create(int asc, int data_type, char *name, char *units);
+Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units);
+
+void dw_interface_push_source(Group *group, Source *source);
+
+void dw_interface_push_metric(Group *group, Metric *metric);
 
 #endif // DATAWAREHOUSE_INTERFACE

@@ -66,9 +66,9 @@ void dw_interface_destroy(DWInterface *dwi);
 
 void dw_interface_set_groups(DWInterface *dwi, Group *groups);
 
-Group *dw_interface_group_create(char *classification, char *group_name, Source *sources);
+Group *dw_interface_group_create(char *classification, char *group_name);
 
-Source *dw_interface_source_create(char *name, Metric *metrics);
+Source *dw_interface_source_create(char *name);
 
 Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units);
 

@@ -343,20 +343,20 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
-Group *dw_interface_group_create(char *classification, char *group_name, Source *sources) {
+Group *dw_interface_group_create(char *classification, char *group_name) {
   Group *group          = s_malloc(sizeof(Group));
   group->classification = classification;
   group->group_name     = group_name;
-  group->sources        = sources;
+  group->sources        = NULL;
   group->sources_len    = 0;
   group->sources_cap    = 1;
   return group;
 }
 
-Source *dw_interface_source_create(char *name, Metric *metrics) {
+Source *dw_interface_source_create(char *name) {
   Source *source       = s_malloc(sizeof(Source));
   source->name         = name;
-  source->metrics      = metrics;
+  source->metrics      = NULL;
   source->metrics_len  = 0;
   source->metrics_cap  = 1;
   return source;
@@ -639,6 +639,7 @@ void dw_interface_destroy(DWInterface *dwi) {
   free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
 
+  // Free all groups, sources, and metrics.
   for (size_t i = 0; i < dwi->groups_len; i++) {
     for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
       for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {

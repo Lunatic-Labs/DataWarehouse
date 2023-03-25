@@ -5,34 +5,6 @@
 char *GLOBAL_AUTHORITY;
 
 /*
- * buffer_t: A structure that represents a dynamic buffer of characters. It
- * contains fields for the data array, the current size of the buffer, and the
- * maximum size of the buffer. The data array is allocated and resized using
- * s_malloc and s_realloc functions. The size field indicates how many bytes are
- * currently stored in the buffer. The max field indicates how many bytes can be
- * stored in the buffer without resizing it.
- */
-struct buffer_t {
-  char  *data;
-  size_t size;
-  size_t max;
-};
-
-/*
- * DWInterface: A structure that represents a DataWarehouse interface. It contains
- * fields for the username and password of the user, and a curl handle for
- * making HTTP requests to the DataWarehouse server.
- */
-typedef struct DWInterface {
-  char *username;
-  char *password;
-  CURL *curl_handle;
-  char uuids[3][UUID_LEN + 1];
-  enum ENV env;
-  enum PORT port;
-} DWInterface;
-
-/*
  * s_malloc: A wrapper function for malloc that checks for allocation errors
  * and exits the program if any occur.
  * Parameters:
@@ -371,6 +343,46 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
+Group *dw_interface_group_create(char *classification, char *group_name) {
+  Group *group          = s_malloc(sizeof(Group));
+  group->classification = classification;
+  group->group_name     = group_name;
+  group->sources        = NULL;
+  group->sources_len    = 0;
+  group->sources_cap    = 1;
+  return group;
+}
+
+Source *dw_interface_source_create(char *name) {
+  Source *source       = s_malloc(sizeof(Source));
+  source->name         = name;
+  source->metrics      = NULL;
+  source->metrics_len  = 0;
+  source->metrics_cap  = 1;
+  return source;
+}
+
+Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units) {
+  Metric *metric    = s_malloc(sizeof(Metric));
+  metric->asc       = asc;
+  metric->data_type = data_type;
+  metric->name      = name;
+  metric->units     = units;
+  return metric;
+}
+
+void dw_interface_push_source(Group *group, Source *source) {
+  NOP(group);
+  NOP(source);
+  UNIMPLEMENTED;
+}
+
+void dw_interface_push_metric(Group *group, Metric *metric) {
+  NOP(group);
+  NOP(metric);
+  UNIMPLEMENTED;
+}
+
 /*
  * dw_interface_create: A function that creates and initializes a DWInterface
  * structure. It also initializes the libcurl library and creates a curl handle.
@@ -382,25 +394,18 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
  *   password fields, and a curl handle. If username or password are empty
  *   strings, PANIC() is called and the program exits.
  */
-DWInterface *dw_interface_create(const char *username,
-                                 const char *password,
+DWInterface *dw_interface_create(char *username,
+                                 char *password,
                                  enum ENV env,
                                  enum PORT port) {
-  size_t usr_len  = strlen(username);
-  size_t pass_len = strlen(password);
-
-  if (!usr_len || !pass_len) {
+  if (!strlen(username) || !strlen(password)) {
     PANIC(Username and password length must be at least 1);
   }
 
   DWInterface *dwi = s_malloc(sizeof(DWInterface));
 
-  // Copy over username and password.
-  dwi->username = s_malloc(usr_len  + 1);
-  dwi->password = s_malloc(pass_len + 1);
-
-  strcpy(dwi->username, username);
-  strcpy(dwi->password, password);
+  dwi->username = username;
+  dwi->password = password;
 
 #ifdef VERBOSE
   printf("Set username: %s and password: %s\n", username, password);
@@ -420,6 +425,10 @@ DWInterface *dw_interface_create(const char *username,
   dwi->uuids[1][0] = '\0';
   dwi->uuids[2][0] = '\0';
 
+  dwi->groups = NULL;
+  dwi->groups_len = 0;
+  dwi->groups_cap = 1;
+
 #ifdef VERBOSE
   printf("Building GLOBAL_AUTHORITY...\n");
 #endif
@@ -428,6 +437,10 @@ DWInterface *dw_interface_create(const char *username,
   build_GLOBAL_AUTHORITY(dwi);
 
   return dwi;
+}
+
+void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
+  dwi->groups = groups;
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
@@ -625,7 +638,16 @@ void dw_interface_destroy(DWInterface *dwi) {
 #endif
   free(GLOBAL_AUTHORITY);
   curl_easy_cleanup(dwi->curl_handle);
-  free(dwi->username);
-  free(dwi->password);
+
+  // Free all groups, sources, and metrics.
+  for (size_t i = 0; i < dwi->groups_len; i++) {
+    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
+      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
+	free(dwi->groups[i].sources[j].metrics);
+      }
+      free(dwi->groups[i].sources);
+    }
+    free(dwi->groups);
+  }
   free(dwi);
 }

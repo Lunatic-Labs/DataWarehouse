@@ -33,6 +33,7 @@ class DWInterface:
         source_uuid=None,
         metric_uuid=None,
     ):
+        
         self.__username = username
         self.__password = password
         self.__ip = ip
@@ -72,7 +73,7 @@ class DWInterface:
         self.__curl_handle.setopt(self.__curl_handle.POSTFIELDS, json.dumps(json_file))
         self.__curl_handle.setopt(self.__curl_handle.WRITEFUNCTION, lambda x: None)
 
-        # Perform the CURL.
+        # Perform the CURL, returning a response string.
         response = self.__curl_handle.perform_rs()
         self.__curl_handle.close()
 
@@ -175,8 +176,8 @@ if __name__ == "__main__":  # Use this for running code, testing, debugging, etc
     dw = DWInterface("usr", "pass")
     # dw.commitHandshake("../../../handshake.json", "handshake.out")
     dw.setUUIDs(guuid, suuid, muuid)
-    dw.insertData("../../../insert.json")
-
+    #dw.insertData("../../../insert.json")
+    dw.insertData("insert.json")
 
 
 

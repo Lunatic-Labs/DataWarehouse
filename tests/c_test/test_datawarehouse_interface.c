@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-// #include "../interface/c_impl/datawarehouse.h"
+#include "datawarehouse_config.h"
+#include "../interface/c_impl/datawarehouse_interface.h"
 #include "../interface/c_impl/_datawarehouse_utils_INTERNAL.h"
 
 /*
@@ -42,4 +43,7 @@ int main(void)
     struct Metric metric;
     struct Source source;
     struct Group group;
+
+    DWInterface *dwi = dw_interface_create("usr", "pass", ENV_LOCAL, PORT_DEV);
+    dw_interface_commit_handshake(dwi, handshake_json_filepath, out_filepath);
 }

@@ -13,9 +13,11 @@ char *GLOBAL_AUTHORITY;
  *   A pointer to the allocated memory block. The content of the block is
  *   uninitialized.
  */
-static void *s_malloc(size_t nbytes) {
+static void *s_malloc(size_t nbytes)
+{
   void *p = malloc(nbytes);
-  if (!p) {
+  if (!p)
+  {
     fprintf(stderr, "ERROR: failed to allocate %zu bytes. Reason: %s\n",
             nbytes, strerror(errno));
     PANIC();
@@ -38,9 +40,11 @@ static void *s_malloc(size_t nbytes) {
  *   The original content of the block is preserved up to the minimum of the old
  *   and new sizes.
  */
-static void *s_realloc(void *ptr, size_t nbytes) {
+static void *s_realloc(void *ptr, size_t nbytes)
+{
   void *p = realloc(ptr, nbytes);
-  if (!p) {
+  if (!p)
+  {
     fprintf(stderr, "ERROR: failed to reallocate %zu bytes. Reason: %s\n",
             nbytes, strerror(errno));
     PANIC();
@@ -55,9 +59,11 @@ static void *s_realloc(void *ptr, size_t nbytes) {
  * the appropriate permission ("r", "w", "b", "wr", etc.). Error checking is
  * then performed. Returns a pointer to the opened file.
  */
-static FILE *open_file(const char *filepath, const char *permission) {
+static FILE *open_file(const char *filepath, const char *permission)
+{
   FILE *fp = fopen(filepath, permission);
-  if (!fp) {
+  if (!fp)
+  {
     fprintf(stderr, "ERROR: could not open file: %s. Reason: %s\n", filepath, strerror(errno));
     PANIC(Stopping communication with DataWarehouse);
   }
@@ -75,7 +81,8 @@ static FILE *open_file(const char *filepath, const char *permission) {
  *   0 if the string is a valid UUID, REG_NOMATCH if it is not, or a
  *   nonzero error code if an error occurs.
  */
-static int verify_uuid(const char *uuid) {
+static int verify_uuid(const char *uuid)
+{
   regex_t regex;
   regcomp(&regex,
           "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -91,11 +98,12 @@ static int verify_uuid(const char *uuid) {
  *   A buffer_t structure with an allocated data array of size m, a size of 0,
  *   and a max of m.
  */
-static struct buffer_t buffer_t_create(size_t m) {
+static struct buffer_t buffer_t_create(size_t m)
+{
   struct buffer_t buff;
   buff.data = s_malloc(m * sizeof(char));
   buff.size = 0;
-  buff.max  = m;
+  buff.max = m;
 #ifdef VERBOSE
   printf("Created buffer with max size: %zu\n", m);
 #endif
@@ -117,13 +125,13 @@ static struct buffer_t buffer_t_create(size_t m) {
  *   should be equal to size*nmemb unless an allocation error occurs. In that
  *   case, PANIC() is called and the program exits.
  */
-static size_t callback(void *contents, size_t size, size_t nmemb, void *context) {
+static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
+{
   struct buffer_t *b = (struct buffer_t *)context;
   size_t real_size = size * nmemb;
 
-  b->data = !b->data ?
-    s_malloc(real_size + 1)
-    : s_realloc(b->data, b->size + real_size + 1);
+  b->data = !b->data ? s_malloc(real_size + 1)
+                     : s_realloc(b->data, b->size + real_size + 1);
 
   memcpy(b->data + b->size, contents, real_size);
   b->size += real_size;
@@ -136,21 +144,23 @@ static size_t callback(void *contents, size_t size, size_t nmemb, void *context)
  * Parameters:
  *   dwi: a pointer to a DWInterface.
  */
-static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
+static void build_GLOBAL_AUTHORITY(const DWInterface *dwi)
+{
 
   // Set the protocol to http.
   const char *protocol = "http://", *port, *ip_addr;
 
   // Set the IP address based on the environment.
-  switch (dwi->env) {
-    case ENV_REMOTE:
-      ip_addr = REMOTE_IP_ADDR;
-      break;
-    case ENV_LOCAL:
-      ip_addr = LOCAL_IP_ADDR;
-      break;
-    default:
-      PANIC(Invalid environment);
+  switch (dwi->env)
+  {
+  case ENV_REMOTE:
+    ip_addr = REMOTE_IP_ADDR;
+    break;
+  case ENV_LOCAL:
+    ip_addr = LOCAL_IP_ADDR;
+    break;
+  default:
+    PANIC(Invalid environment);
   }
 
 #ifdef VERBOSE
@@ -158,18 +168,19 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
 #endif
 
   // Set the port based on the specified port.
-  switch (dwi->port) {
-    case PORT_DEV:
-      port = DEVELOPMENT_PORT;
-      break;
-    case PORT_STAGING:
-      port = STAGING_PORT;
-      break;
-    case PORT_PROD:
-      port = PRODUCTION_PORT;
-      break;
-    default:
-      PANIC(Invalid port);
+  switch (dwi->port)
+  {
+  case PORT_DEV:
+    port = DEVELOPMENT_PORT;
+    break;
+  case PORT_STAGING:
+    port = STAGING_PORT;
+    break;
+  case PORT_PROD:
+    port = PRODUCTION_PORT;
+    break;
+  default:
+    PANIC(Invalid port);
   }
 
 #ifdef VERBOSE
@@ -178,8 +189,8 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
 
   // Calculate the length of the protocol, IP address, and port.
   size_t protocol_len = strlen(protocol);
-  size_t ip_addr_len  = strlen(ip_addr);
-  size_t port_len     = strlen(port);
+  size_t ip_addr_len = strlen(ip_addr);
+  size_t port_len = strlen(port);
 
   // Calculate the total length of the authority string.
   size_t total_len = protocol_len + ip_addr_len + port_len + 1;
@@ -209,7 +220,8 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
  *   the given path. Memory for the new string is allocated using s_malloc and
  *   must be freed by the caller.
  */
-static char *construct_url(const char *path) {
+static char *construct_url(const char *path)
+{
   char *url = s_malloc(strlen(GLOBAL_AUTHORITY) + strlen(path) + 1);
   strcpy(url, GLOBAL_AUTHORITY);
   strcat(url, path);
@@ -221,7 +233,8 @@ static char *construct_url(const char *path) {
   return url;
 }
 
-static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
+static char *copy_buffer_data(const char *buf_data, size_t buf_sz)
+{
   char *response = s_malloc(buf_sz + 1);
   strncpy(response, buf_data, buf_sz);
   response[buf_sz] = '\0';
@@ -233,8 +246,10 @@ static char *copy_buffer_data(const char *buf_data, size_t buf_sz) {
   return response;
 }
 
-static void perform_curl_and_check(CURLcode code) {
-  if (code != CURLE_OK) {
+static void perform_curl_and_check(CURLcode code)
+{
+  if (code != CURLE_OK)
+  {
     fprintf(stderr, "ERROR: curl_easy_perform() failed. Reason: %s\n",
             curl_easy_strerror(code));
     PANIC();
@@ -246,8 +261,9 @@ static void perform_curl_and_check(CURLcode code) {
 }
 
 // Perform a POST request.
-static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file) {
-  char *file_data            = NULL;
+static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_file)
+{
+  char *file_data = NULL;
   struct curl_slist *headers = NULL;
   size_t file_size;
 
@@ -256,7 +272,7 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 #endif
 
   // Set the url and POST option.
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,  url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL, url);
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POST, 1L);
 
   // Set the content type header to application/json.
@@ -274,7 +290,8 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 
   // Get the file data.
   file_data = s_malloc(file_size + 1);
-  if (!fread(file_data, 1, file_size, json_file)) {
+  if (!fread(file_data, 1, file_size, json_file))
+  {
     fprintf(stderr, "ERROR: Failed to read file contents. Reason: %s\n",
             strerror(errno));
     PANIC();
@@ -289,7 +306,7 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 
   // Set options for writing data.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA, &buf);
 
   // Set the request body to the file contents.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_POSTFIELDS, file_data);
@@ -314,7 +331,8 @@ static char *POST_request(const DWInterface *dwi, const char *url, FILE *json_fi
 }
 
 // Perform a GET request.
-static char *GET_request(const DWInterface *dwi, const char *url) {
+static char *GET_request(const DWInterface *dwi, const char *url)
+{
 
 #ifdef VERBOSE
   printf("Performing GET request...\n");
@@ -324,8 +342,8 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
 
   // Set the options for curl.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEFUNCTION, callback);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA,     &buf);
-  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL,           url);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_WRITEDATA, &buf);
+  curl_easy_setopt(dwi->curl_handle, CURLOPT_URL, url);
 
   // Allow redirects.
   curl_easy_setopt(dwi->curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
@@ -343,41 +361,57 @@ static char *GET_request(const DWInterface *dwi, const char *url) {
   return response;
 }
 
-Group *dw_interface_group_create(char *classification, char *group_name) {
-  Group *group          = s_malloc(sizeof(Group));
+Group *dw_interface_group_create(char *classification, char *group_name)
+{
+  Group *group = s_malloc(sizeof(Group));
   group->classification = classification;
-  group->group_name     = group_name;
-  group->sources        = NULL;
-  group->sources_len    = 0;
-  group->sources_cap    = 1;
+  group->group_name = group_name;
+  group->sources = NULL;
+  group->sources_len = 0;
+  group->sources_cap = 1;
   return group;
 }
 
-Source *dw_interface_source_create(char *name) {
-  Source *source       = s_malloc(sizeof(Source));
-  source->name         = name;
-  source->metrics      = NULL;
-  source->metrics_len  = 0;
-  source->metrics_cap  = 1;
+Source *dw_interface_source_create(char *name)
+{
+  Source *source = s_malloc(sizeof(Source));
+  source->name = name;
+  source->metrics = NULL;
+  source->metrics_len = 0;
+  source->metrics_cap = 1;
   return source;
 }
 
-Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units) {
-  Metric *metric    = s_malloc(sizeof(Metric));
-  metric->asc       = asc;
+Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units)
+{
+  Metric *metric = s_malloc(sizeof(Metric));
+  metric->asc = asc;
   metric->data_type = data_type;
-  metric->name      = name;
-  metric->units     = units;
+  metric->name = name;
+  metric->units = units;
   return metric;
 }
 
-void dw_interface_push_source(Group *group, Source *source) {
+void dw_interface_push_source(Group *group, Source *source)
+{
   NOP(group);
   NOP(source);
   UNIMPLEMENTED;
 }
 
-void dw_interface_push_metric(Group *group, Metric *metric) {
+// void dw_interface_push_source(Group *group, Source *source) {
+//   NOP(group);
+//   NOP(source);
+//   if (group->sources_len == group->sources_cap) {
+//     group->sources = realloc(group->sources, sizeof(Source) * group->sources_cap * 2);
+//     group->sources_cap *= 2;
+//   }
+//   group->sources[group->sources_len++] = source;
+//   UNIMPLEMENTED;
+// }
+
+void dw_interface_push_metric(Group *group, Metric *metric)
+{
   NOP(group);
   NOP(metric);
   UNIMPLEMENTED;
@@ -397,8 +431,10 @@ void dw_interface_push_metric(Group *group, Metric *metric) {
 DWInterface *dw_interface_create(char *username,
                                  char *password,
                                  enum ENV env,
-                                 enum PORT port) {
-  if (!strlen(username) || !strlen(password)) {
+                                 enum PORT port)
+{
+  if (!strlen(username) || !strlen(password))
+  {
     PANIC(Username and password length must be at least 1);
   }
 
@@ -417,7 +453,7 @@ DWInterface *dw_interface_create(char *username,
   // Create curl.
   dwi->curl_handle = curl_easy_init();
 
-  dwi->env  = env;
+  dwi->env = env;
   dwi->port = port;
 
   // Set all UUIDs blank.
@@ -439,25 +475,30 @@ DWInterface *dw_interface_create(char *username,
   return dwi;
 }
 
-void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
+void dw_interface_set_groups(DWInterface *dwi, Group *groups)
+{
   dwi->groups = groups;
 }
 
 void dw_interface_set_uuids(DWInterface *dwi,
                             const char group_uuid[UUID_LEN],
                             const char source_uuid[UUID_LEN],
-                            const char metric_uuid[UUID_LEN]) {
+                            const char metric_uuid[UUID_LEN])
+{
 #ifdef VERBOSE
   printf("Verifying UUIDs:\n\t%s\n\t%s\n\t%s\n", group_uuid, source_uuid, metric_uuid);
 #endif
 
-  if (verify_uuid(group_uuid) != 0) {
+  if (verify_uuid(group_uuid) != 0)
+  {
     PANIC(Invalid group_uuid);
   }
-  if (verify_uuid(source_uuid) != 0) {
+  if (verify_uuid(source_uuid) != 0)
+  {
     PANIC(Invalid source_uuid);
   }
-  if (verify_uuid(metric_uuid) != 0) {
+  if (verify_uuid(metric_uuid) != 0)
+  {
     PANIC(Invalid metric_uuid);
   }
 
@@ -466,7 +507,7 @@ void dw_interface_set_uuids(DWInterface *dwi,
 #endif
 
   // Copy UUIDs into DWInterface instance.
-  strcpy(dwi->uuids[GROUP_UUID],  group_uuid);
+  strcpy(dwi->uuids[GROUP_UUID], group_uuid);
   strcpy(dwi->uuids[SOURCE_UUID], source_uuid);
   strcpy(dwi->uuids[METRIC_UUID], metric_uuid);
 }
@@ -486,17 +527,19 @@ void dw_interface_set_uuids(DWInterface *dwi,
  */
 char *dw_interface_commit_handshake(const DWInterface *dwi,
                                     const char *handshake_json_filepath,
-                                    const char *out_filepath) {
+                                    const char *out_filepath)
+{
 #ifdef VERBOSE
   printf("Performing handshake request with file(s):\n");
-  printf("\t%s\n\t%s\n", handshake_json_filepath, out_filepath? out_filepath : "NULL");
+  printf("\t%s\n\t%s\n", handshake_json_filepath, out_filepath ? out_filepath : "NULL");
 #endif
 
   FILE *infp = open_file(handshake_json_filepath, "r");
   FILE *outfp;
 
   // This needs to be here in order to not perform the CURL request.
-  if (out_filepath) {
+  if (out_filepath)
+  {
     outfp = open_file(out_filepath, "w");
   }
 
@@ -507,7 +550,8 @@ char *dw_interface_commit_handshake(const DWInterface *dwi,
   char *response = POST_request(dwi, url, infp);
 
   // Write the received information to an output file.
-  if (out_filepath) {
+  if (out_filepath)
+  {
 #ifdef VERBOSE
     printf("Writing to file: %s\n", out_filepath);
 #endif
@@ -531,7 +575,8 @@ char *dw_interface_commit_handshake(const DWInterface *dwi,
  *   metric_uuid: the metric uuid that is needed.
  *   json_file: a pointer to a FILE object that represents the JSON file.
  */
-void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_filepath) {
+void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_filepath)
+{
 
 #ifdef VERBOSE
   printf("Performing insert data with file: %s\n", insert_json_filepath);
@@ -564,22 +609,25 @@ void dw_interface_insert_data(const DWInterface *dwi, const char *insert_json_fi
  */
 char *dw_interface_query_data(const DWInterface *dwi,
                               const char *query_string,
-                              const char *out_filepath) {
+                              const char *out_filepath)
+{
 #ifdef VERBOSE
   printf("Performing query data with query string and (file):\n");
-  printf("\t%s\n\t%s\n", query_string, out_filepath? out_filepath : "NULL");
+  printf("\t%s\n\t%s\n", query_string, out_filepath ? out_filepath : "NULL");
 #endif
 
   UUIDS_PRESENT(dwi);
   FILE *outfp;
 
   // This needs to be here in order to not perform the CURL request.
-  if (out_filepath) {
+  if (out_filepath)
+  {
     outfp = open_file(out_filepath, "w");
   }
 
-  if (*(query_string) != '?') {
-    PANIC(Invalid query string. The first character of a query_string must be '?');
+  if (*(query_string) != '?')
+  {
+    PANIC(Invalid query string.The first character of a query_string must be '?');
   }
 
   // Construct a valid url with the GLOBAL_AUTHORITY and the QUERY_PATH.
@@ -587,13 +635,13 @@ char *dw_interface_query_data(const DWInterface *dwi,
 
   // Get lengths of all necessary strings to build the appropriate url.
   size_t query_string_len = strlen(query_string);
-  size_t group_uuid_len   = strlen(dwi->uuids[GROUP_UUID]);
-  size_t source_uuid_len  = strlen(dwi->uuids[SOURCE_UUID]);
-  size_t url_len          = strlen(url);
+  size_t group_uuid_len = strlen(dwi->uuids[GROUP_UUID]);
+  size_t source_uuid_len = strlen(dwi->uuids[SOURCE_UUID]);
+  size_t url_len = strlen(url);
 
   // + 1 for '/' and + 1 for '/' and +1 for '\0'.
   char *url_uuids_query_string //         /                                        /  \0
-    = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
+      = s_malloc(url_len + group_uuid_len + 1 + source_uuid_len + query_string_len + 1 + 1);
 
   // Start concatenating the strings together to build the final url.
   strncpy(url_uuids_query_string, url, url_len);
@@ -611,7 +659,8 @@ char *dw_interface_query_data(const DWInterface *dwi,
   char *response = GET_request(dwi, url_uuids_query_string);
 
   // Write the received information to an output file.
-  if (out_filepath) {
+  if (out_filepath)
+  {
 #ifdef VERBOSE
     printf("Writing to file: %s\n", out_filepath);
 #endif
@@ -629,8 +678,10 @@ char *dw_interface_query_data(const DWInterface *dwi,
  * Parameters:
  *   dwi: a pointer to a DWInterface struct that needs to be destroyed.
  */
-void dw_interface_destroy(DWInterface *dwi) {
-  if (!dwi) {
+void dw_interface_destroy(DWInterface *dwi)
+{
+  if (!dwi)
+  {
     PANIC(dw_interface_create() must be called first);
   }
 #ifdef VERBOSE
@@ -640,10 +691,13 @@ void dw_interface_destroy(DWInterface *dwi) {
   curl_easy_cleanup(dwi->curl_handle);
 
   // Free all groups, sources, and metrics.
-  for (size_t i = 0; i < dwi->groups_len; i++) {
-    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
-      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
-	free(dwi->groups[i].sources[j].metrics);
+  for (size_t i = 0; i < dwi->groups_len; i++)
+  {
+    for (size_t j = 0; j < dwi->groups[i].sources_len; j++)
+    {
+      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++)
+      {
+        free(dwi->groups[i].sources[j].metrics);
       }
       free(dwi->groups[i].sources);
     }

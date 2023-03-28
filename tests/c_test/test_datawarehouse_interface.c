@@ -45,5 +45,7 @@ int main(void)
     struct Group group;
 
     DWInterface *dwi = dw_interface_create("usr", "pass", ENV_LOCAL, PORT_DEV);
-    dw_interface_commit_handshake(dwi, handshake_json_filepath, out_filepath);
+    dw_interface_commit_handshake(dwi, handshake_json_filepath, NULL);
+
+    dw_interface_insert_data(dwi, insert_json_filepath);
 }

@@ -187,7 +187,6 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi) {
 
   // Initialize the authority string to all '\0'.
   memset(GLOBAL_AUTHORITY, '\0', total_len);
-
   // Copy the protocol, IP address, and port into the authority string.
   strcpy(GLOBAL_AUTHORITY, protocol);
   strcat(GLOBAL_AUTHORITY, ip_addr);
@@ -347,18 +346,18 @@ Group *dw_interface_group_create(char *classification, char *group_name) {
   Group *group          = s_malloc(sizeof(Group));
   group->classification = classification;
   group->group_name     = group_name;
-  group->sources        = NULL;
-  group->sources_len    = 0;
-  group->sources_cap    = 1;
+  group->sources        = s_malloc(sizeof(Source));
+  group->len            = 0;
+  group->cap            = 1;
   return group;
 }
 
 Source *dw_interface_source_create(char *name) {
   Source *source       = s_malloc(sizeof(Source));
   source->name         = name;
-  source->metrics      = NULL;
-  source->metrics_len  = 0;
-  source->metrics_cap  = 1;
+  source->len          = 0;
+  source->metrics      = s_malloc(sizeof(Metric));
+  source->cap          = 1;
   return source;
 }
 
@@ -641,8 +640,8 @@ void dw_interface_destroy(DWInterface *dwi) {
 
   // Free all groups, sources, and metrics.
   for (size_t i = 0; i < dwi->groups_len; i++) {
-    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
-      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
+    for (size_t j = 0; j < dwi->groups[i].len; j++) {
+      for (size_t k = 0; k < dwi->groups[i].sources[j].len; k++) {
 	free(dwi->groups[i].sources[j].metrics);
       }
       free(dwi->groups[i].sources);

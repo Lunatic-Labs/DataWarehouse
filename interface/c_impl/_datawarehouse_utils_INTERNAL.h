@@ -87,26 +87,34 @@ typedef enum Datatype {
 
 /* Structs */
 
+typedef struct dynamic_array {
+  void *data;
+  size_t len;
+  size_t cap;
+} dynamic_array;
+
 typedef struct Metric {
   int       asc;
-  Datatype  data_type; // TODO: use the Datatype enum.
+  Datatype  data_type;
   char      *name;
   char      *units;
 } Metric;
 
 typedef struct Source {
   char   *name;
-  Metric *metrics; // TODO: make a dynamic array.
-  size_t metrics_len;
-  size_t metrics_cap;
+  dynamic_array metrics;
+  // Metric *metrics; // TODO: make a dynamic array.
+  // size_t len;
+  // size_t cap;
 } Source;
 
 typedef struct Group {
   char   *classification;
   char   *group_name;
-  Source *sources; // TODO: make a dynamic array.
-  size_t sources_len;
-  size_t sources_cap;
+  dynamic_array sources;
+  // Source *sources; // TODO: make a dynamic array.
+  // size_t len;
+  // size_t cap;
 } Group;
 
 /*
@@ -119,7 +127,8 @@ typedef struct DWInterface {
   char *password;
   CURL *curl_handle;
   char uuids[3][UUID_LEN + 1];
-  Group *groups;
+  // Group *groups;
+  dynamic_array groups;
   size_t groups_len;
   size_t groups_cap;
   enum ENV env;

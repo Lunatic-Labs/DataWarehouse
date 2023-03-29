@@ -4,6 +4,7 @@
 
 int main(void) {
 
+  debug();
 
   return 0;
 }

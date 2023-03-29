@@ -1,0 +1,4 @@
+main
+*.o
+.vscode
+handshake_information.json

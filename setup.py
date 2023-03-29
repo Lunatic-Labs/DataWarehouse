@@ -9,7 +9,7 @@ with open("README.md") as readme_file:
 requirements = [
     "flask",
     "flask-sqlalchemy",
-    "sqlalchemy",
+    "sqlalchemy==1.4.46",
     "python-dotenv",
     "stringcase",
     "black",

@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "datawarehouse_config.h"
-#include "../interface/c_impl/datawarehouse_interface.h"
-#include "../interface/c_impl/_datawarehouse_utils_INTERNAL.h"
-
+#include "../../interface/c_impl/datawarehouse_interface.h"
 /*
 Goal is to create tests that will populate the database using the datawarehouse interface
 
@@ -32,11 +30,11 @@ int main(void) {
 }
 */
 
-TEST_GROUP()
-{
-    void setup();
-    void teardown();
-};
+// TEST_GROUP()
+// {
+//     void setup();
+//     void teardown();
+// };
 
 int main(void)
 {
@@ -48,4 +46,6 @@ int main(void)
     dw_interface_commit_handshake(dwi, handshake_json_filepath, NULL);
 
     dw_interface_insert_data(dwi, insert_json_filepath);
+
+
 }

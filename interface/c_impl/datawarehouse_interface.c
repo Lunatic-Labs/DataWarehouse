@@ -424,8 +424,23 @@ Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char
 }
 
 void debug(DWInterface *dwi) {
+  printf("--- METADATA ---\n");
   for (size_t i = 0; i < dwi->groups.len; i++) {
-    printf("%s\t%s\n", dwi->groups.data.group[i].classification, dwi->groups.data.group[i].group_name);
+    Group g = dwi->groups.data.group[i];
+    printf("\tGroup: %ld\n", i+1);
+    printf("\t%s\t%s\n", g.classification, g.group_name);
+
+    for (size_t j = 0; j < g.sources.len; j++) {
+      Source s = g.sources.data.source[j];
+      printf("\t\tSource: %ld\n", j+1);
+      printf("\t\t%s\n", s.name);
+
+      for (size_t k = 0; k < s.metrics.len; k++) {
+	Metric m = s.metrics.data.metric[i];
+	printf("\t\t\tMetric: %ld\n", k+1);
+	printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
+      }
+    }
   }
 }
 
@@ -434,15 +449,11 @@ void dw_interface_push_group(DWInterface *dwi, Group *group) {
 }
 
 void dw_interface_push_source(Group *group, Source *source) {
-  NOP(group);
-  NOP(source);
-  UNIMPLEMENTED;
+  dynamic_array_push(&group->sources, (void *)source);
 }
 
-void dw_interface_push_metric(Group *group, Metric *metric) {
-  NOP(group);
-  NOP(metric);
-  UNIMPLEMENTED;
+void dw_interface_push_metric(Source *source, Metric *metric) {
+  dynamic_array_push(&source->metrics, (void *)metric);
 }
 
 /*

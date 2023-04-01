@@ -78,6 +78,6 @@ void dw_interface_push_group(DWInterface *dwi, Group *group);
 
 void dw_interface_push_source(Group *group, Source *source);
 
-void dw_interface_push_metric(Group *group, Metric *metric);
+void dw_interface_push_metric(Source *source, Metric *metric);
 
 #endif // DATAWAREHOUSE_INTERFACE

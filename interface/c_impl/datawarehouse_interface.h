@@ -10,7 +10,7 @@
 
 typedef struct DWInterface DWInterface;
 
-void debug();
+void debug(DWInterface *dwi);
 
 // Creates a new instance of the DWInterface struct.
 // It takes a username and password and puts them in the DWInterface.
@@ -73,6 +73,8 @@ Group *dw_interface_group_create(char *classification, char *group_name);
 Source *dw_interface_source_create(char *name);
 
 Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units);
+
+void dw_interface_push_group(DWInterface *dwi, Group *group);
 
 void dw_interface_push_source(Group *group, Source *source);
 

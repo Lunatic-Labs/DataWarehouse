@@ -11,6 +11,40 @@ import json
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
+#Define the Data Warehouse data hierarchy: DWInterface > Groups > Sources > Metrics
+class Metric:
+    def __init__(
+        self,
+        asc,
+        datatype,
+        name,
+        units
+    ):
+        self.asc = asc
+        self.datatype = datatype
+        self.name = name
+        self.units = units
+
+class Source:
+    def __init__(
+        self,
+        name,
+        metric=None
+    ):
+        self.name = name
+        self.metrics = list(metric)
+
+class Group:
+    def  __init__(
+        self,
+        classification,
+        name,
+        source=None
+    ):
+        self.classification = classification
+        self.name = name
+        self.sources = list(source)
+
 class DWInterface:
     remote_ip_address = "3.216.190.202"
     local_ip_address = "127.0.0.1"
@@ -31,7 +65,7 @@ class DWInterface:
         port=development_port,
         group_uuid=None,
         source_uuid=None,
-        metric_uuid=None,
+        metric_uuid=None
     ):
         
         self.__username = username
@@ -46,6 +80,7 @@ class DWInterface:
         self.__insert_url = self.__authority + self.insert_path
         self.__query_url = self.__authority + self.query_path
         self.__curl_handle = pycurl.Curl()
+        self.groups = list()
 
     # Private Functions.
 
@@ -166,6 +201,25 @@ class DWInterface:
             self.__metric_uuid = metric_uuid
         else:
             raise ValueError("Invalid UUIDs provided")
+        
+    def dwInterfaceGroupCreate(self, classification, name):
+        self.groups.append(Group(classification, name))
+
+    def dwInterfaceSourceCreate(self, group, name):
+        group.sources.append(Source(name))
+
+    def dwInterfaceMetricCreate(self, source, name, units):
+        source.metrics.append(Metric(name, units))
+
+    def checkLength(self, thing):       #Returns the length of of a DWInterface, Group, or Source 
+        if (type(thing) == DWInterface):
+            return len(thing.groups)
+        elif (type(thing) == Group):
+            return len(thing.sources)
+        elif (type(thing) == Source):
+            return len(thing.metrics)
+        else
+            return
 
 
 if __name__ == "__main__":  # Use this for running code, testing, debugging, etc.

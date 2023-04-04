@@ -429,12 +429,10 @@ void debug(DWInterface *dwi) {
     Group g = dwi->groups.data.group[i];
     printf("\tGroup: %ld\n", i+1);
     printf("\t%s\t%s\n", g.classification, g.group_name);
-
     for (size_t j = 0; j < g.sources.len; j++) {
       Source s = g.sources.data.source[j];
       printf("\t\tSource: %ld\n", j+1);
       printf("\t\t%s\n", s.name);
-
       for (size_t k = 0; k < s.metrics.len; k++) {
 	Metric m = s.metrics.data.metric[i];
 	printf("\t\t\tMetric: %ld\n", k+1);
@@ -454,6 +452,33 @@ void dw_interface_push_source(Group *group, Source *source) {
 
 void dw_interface_push_metric(Source *source, Metric *metric) {
   dynamic_array_push(&source->metrics, (void *)metric);
+}
+
+void dw_interface_gen_insert(DWInterface *dwi) {
+  char *json = s_malloc(1000000);
+  memset(json, '\0', 1000000);
+
+  strcat(json, "{\"source_uid\": \"");
+
+}
+
+void dw_interface_gen_metadata(DWInterface *dwi) {
+  UNIMPLEMENTED;
+  //  for (size_t i = 0; i < dwi->groups.len; i++) {
+  //    Group g = dwi->groups.data.group[i];
+  //    printf("\tGroup: %ld\n", i+1);
+  //    printf("\t%s\t%s\n", g.classification, g.group_name);
+  //    for (size_t j = 0; j < g.sources.len; j++) {
+  //      Source s = g.sources.data.source[j];
+  //      printf("\t\tSource: %ld\n", j+1);
+  //      printf("\t\t%s\n", s.name);
+  //      for (size_t k = 0; k < s.metrics.len; k++) {
+  //    Metric m = s.metrics.data.metric[i];
+  //    printf("\t\t\tMetric: %ld\n", k+1);
+  //    printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
+  //      }
+  //    }
+  //  }
 }
 
 /*

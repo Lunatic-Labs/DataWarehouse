@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "json.c"
+#include "json.h"
 #include "datawarehouse_config.h"
 #include "../../interface/c_impl/datawarehouse_interface.h"
 /*
@@ -43,9 +45,22 @@ int main(void)
     struct Group group;
 
     DWInterface *dwi = dw_interface_create("usr", "pass", ENV_LOCAL, PORT_DEV);
-    dw_interface_commit_handshake(dwi, handshake_json_filepath, NULL);
-
+    dw_interface_commit_handshake(dwi, handshake_json_filepath, out_json_filepath);
     dw_interface_insert_data(dwi, insert_json_filepath);
 
+    FILE *fp;
+    char buffer[1024];
 
+    struct json_object *parsed_json;
+    fp = fopen("out.json", "r");
+    fread(buffer, 1024, 1, fp);
+    fclose(fp);
+
+    // Ask about how to use c json parser 
+    // Found a json parse but need to know how to use and if it is good
+    // https://github.com/json-parser/json-parser
+
+    parsed_json = json_tokener_parse(buffer);
+
+    
 }

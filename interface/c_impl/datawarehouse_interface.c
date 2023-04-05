@@ -198,7 +198,6 @@ static void build_GLOBAL_AUTHORITY(const DWInterface *dwi)
 
   // Initialize the authority string to all '\0'.
   memset(GLOBAL_AUTHORITY, '\0', total_len);
-
   // Copy the protocol, IP address, and port into the authority string.
   strcpy(GLOBAL_AUTHORITY, protocol);
   strcat(GLOBAL_AUTHORITY, ip_addr);
@@ -361,60 +360,139 @@ static char *GET_request(const DWInterface *dwi, const char *url)
   return response;
 }
 
-Group *dw_interface_group_create(char *classification, char *group_name)
-{
-  Group *group = s_malloc(sizeof(Group));
+static dynamic_array dynamic_array_create(DynamicArrayType type) {
+  dynamic_array da;
+  da.len = 0;
+  da.cap = 1;
+  da.type = type;
+  switch (type) {
+  case GROUP:
+    da.data.group = s_malloc(sizeof(Group));
+    break;
+  case SOURCE:
+    da.data.source = s_malloc(sizeof(Source));
+    break;
+  case METRIC:
+    da.data.metric = s_malloc(sizeof(Metric));
+    break;
+  default:
+    PANIC(Invalid DynamicArrayType);
+  }
+  return da;
+}
+
+static void dynamic_array_check_len(dynamic_array *da) {
+  if (da->len >= da->cap) {
+    da->cap *= 2;
+    switch (da->type) {
+    case GROUP:
+      da->data.group = s_realloc(da->data.group, sizeof(Group) * da->cap);
+      break;
+    case SOURCE:
+      da->data.source = s_realloc(da->data.source, sizeof(Source) * da->cap);
+      break;
+    case METRIC:
+      da->data.metric = s_realloc(da->data.metric, sizeof(Metric) * da->cap);
+      break;
+    default:
+      PANIC(Unreachable);
+    }
+  }
+}
+
+static void dynamic_array_push(dynamic_array *da, void *data) {
+  dynamic_array_check_len(da);
+  switch (da->type) {
+  case GROUP:
+    da->data.group[da->len++] = *(Group *)data;
+    break;
+  case SOURCE:
+    da->data.source[da->len++] = *(Source *)data;
+    break;
+  case METRIC:
+    da->data.metric[da->len++] = *(Metric *)data;
+    break;
+  default:
+    PANIC(Unreachable);
+  }
+}
+
+Group *dw_interface_group_create(char *classification, char *group_name) {
+  Group *group          = s_malloc(sizeof(Group));
   group->classification = classification;
-  group->group_name = group_name;
-  group->sources = NULL;
-  group->sources_len = 0;
-  group->sources_cap = 1;
+  group->group_name     = group_name;
+  group->sources        = NULL;
+  group->sources_len    = 0;
+  group->sources_cap    = 1;
   return group;
 }
 
-Source *dw_interface_source_create(char *name)
-{
-  Source *source = s_malloc(sizeof(Source));
-  source->name = name;
-  source->metrics = NULL;
-  source->metrics_len = 0;
-  source->metrics_cap = 1;
+Source *dw_interface_source_create(char *name) {
+  Source *source       = s_malloc(sizeof(Source));
+  source->name         = name;
+  source->metrics      = NULL;
+  source->metrics_len  = 0;
+  source->metrics_cap  = 1;
   return source;
 }
 
-Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units)
-{
-  Metric *metric = s_malloc(sizeof(Metric));
-  metric->asc = asc;
+Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units) {
+  Metric *metric    = s_malloc(sizeof(Metric));
+  metric->asc       = asc;
   metric->data_type = data_type;
   metric->name = name;
   metric->units = units;
   return metric;
 }
 
-void dw_interface_push_source(Group *group, Source *source)
-{
+void debug(DWInterface *dwi) {
+  printf("--- METADATA ---\n");
+  for (size_t i = 0; i < dwi->groups.len; i++) {
+    Group g = dwi->groups.data.group[i];
+    printf("\tGroup: %ld\n", i+1);
+    printf("\t%s\t%s\n", g.classification, g.group_name);
+    for (size_t j = 0; j < g.sources.len; j++) {
+      Source s = g.sources.data.source[j];
+      printf("\t\tSource: %ld\n", j+1);
+      printf("\t\t%s\n", s.name);
+      for (size_t k = 0; k < s.metrics.len; k++) {
+	Metric m = s.metrics.data.metric[i];
+	printf("\t\t\tMetric: %ld\n", k+1);
+	printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
+      }
+    }
+  }
+}
+
+void dw_interface_push_group(DWInterface *dwi, Group *group) {
+  dynamic_array_push(&dwi->groups, (void *)group);
+}
+
+void dw_interface_push_source(Group *group, Source *source) {
   NOP(group);
   NOP(source);
   UNIMPLEMENTED;
 }
 
-// void dw_interface_push_source(Group *group, Source *source) {
-//   NOP(group);
-//   NOP(source);
-//   if (group->sources_len == group->sources_cap) {
-//     group->sources = realloc(group->sources, sizeof(Source) * group->sources_cap * 2);
-//     group->sources_cap *= 2;
-//   }
-//   group->sources[group->sources_len++] = source;
-//   UNIMPLEMENTED;
-// }
-
-void dw_interface_push_metric(Group *group, Metric *metric)
-{
+void dw_interface_push_metric(Group *group, Metric *metric) {
   NOP(group);
   NOP(metric);
   UNIMPLEMENTED;
+  //  for (size_t i = 0; i < dwi->groups.len; i++) {
+  //    Group g = dwi->groups.data.group[i];
+  //    printf("\tGroup: %ld\n", i+1);
+  //    printf("\t%s\t%s\n", g.classification, g.group_name);
+  //    for (size_t j = 0; j < g.sources.len; j++) {
+  //      Source s = g.sources.data.source[j];
+  //      printf("\t\tSource: %ld\n", j+1);
+  //      printf("\t\t%s\n", s.name);
+  //      for (size_t k = 0; k < s.metrics.len; k++) {
+  //    Metric m = s.metrics.data.metric[i];
+  //    printf("\t\t\tMetric: %ld\n", k+1);
+  //    printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
+  //      }
+  //    }
+  //  }
 }
 
 /*
@@ -461,10 +539,6 @@ DWInterface *dw_interface_create(char *username,
   dwi->uuids[1][0] = '\0';
   dwi->uuids[2][0] = '\0';
 
-  dwi->groups = NULL;
-  dwi->groups_len = 0;
-  dwi->groups_cap = 1;
-
 #ifdef VERBOSE
   printf("Building GLOBAL_AUTHORITY...\n");
 #endif
@@ -472,11 +546,12 @@ DWInterface *dw_interface_create(char *username,
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
 
+  dwi->groups = dynamic_array_create(GROUP);
+
   return dwi;
 }
 
-void dw_interface_set_groups(DWInterface *dwi, Group *groups)
-{
+void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
   dwi->groups = groups;
 }
 
@@ -691,13 +766,10 @@ void dw_interface_destroy(DWInterface *dwi)
   curl_easy_cleanup(dwi->curl_handle);
 
   // Free all groups, sources, and metrics.
-  for (size_t i = 0; i < dwi->groups_len; i++)
-  {
-    for (size_t j = 0; j < dwi->groups[i].sources_len; j++)
-    {
-      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++)
-      {
-        free(dwi->groups[i].sources[j].metrics);
+  for (size_t i = 0; i < dwi->groups_len; i++) {
+    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
+      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
+	free(dwi->groups[i].sources[j].metrics);
       }
       free(dwi->groups[i].sources);
     }

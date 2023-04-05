@@ -18,5 +18,3 @@ class getUUIDs:
             return metric["metric_uid"]
 
 
-uuid = getUUIDs(data)
-print(uuid.getMUUID())

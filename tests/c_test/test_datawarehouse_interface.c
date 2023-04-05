@@ -1,17 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-<<<<<<< HEAD
-#include "datawarehouse_config.h"
-#include "../interface/c_impl/datawarehouse_interface.h"
-#include "../interface/c_impl/_datawarehouse_utils_INTERNAL.h"
-
-=======
-#include "json.c"
-#include "json.h"
 #include "datawarehouse_config.h"
 #include "../../interface/c_impl/datawarehouse_interface.h"
->>>>>>> 4f4bea756b7729230eceb73579293207d8f42957
 /*
 Goal is to create tests that will populate the database using the datawarehouse interface
 

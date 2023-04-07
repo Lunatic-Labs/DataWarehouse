@@ -57,7 +57,7 @@ class DWInterface:
 
     # Private Functions.
 
-    def __POSTRequest(self, json_filepath, out_filepath):
+    def __POSTRequest(self, json_filepath, out_filepath, url):
         """
         This function should return the data from commitHandshake()
         as there is no need to return anything from insertData().
@@ -99,7 +99,7 @@ class DWInterface:
         # Create a buffer to recieve data.
         buf = BytesIO()
 
-        self.__curl_handle.setopt(self.__curl_handle.URL, self.__handshake_url) #Should use interface_handshake_url?
+        self.__curl_handle.setopt(self.__curl_handle.URL, url) #Should use interface_handshake_url?
         self.__curl_handle.setopt(pycurl.HTTPHEADER, ['Content-Type: application/json'])
         self.__curl_handle.setopt(self.__curl_handle.POSTFIELDS, json.dumps(json_file))
         self.__curl_handle.setopt(self.__curl_handle.WRITEFUNCTION, lambda x: None)
@@ -223,10 +223,10 @@ class DWInterface:
     # Public Functions.
 
     def commitHandshake(self, handshake_json, out_file_path=None):
-        return self.__POSTRequest(handshake_json, out_file_path)
+        return self.__POSTRequest(handshake_json, out_file_path, self.__handshake_url)
 
     def insertData(self, insert_json):
-        self.__POSTRequest(insert_json, None)
+        self.__POSTRequest(insert_json, None, self.__insert_url)
 
     def queryData(self, query_string, out_file=None):
         return self.__GETRequest(query_string, out_file)
@@ -242,6 +242,12 @@ class DWInterface:
             self.__metric_uuid = metric_uuid
         else:
             raise ValueError("Invalid UUIDs provided")
+    
+    def setVal(self, source, metric, value, handshake_filepath):
+        #Receive Source and Metric by plaintext name
+        #Find related UUIDs for both
+        #Set the value at that Metric to value
+
 
 
 if __name__ == "__main__":  # Use this for running code, testing, debugging, etc.
@@ -254,6 +260,8 @@ if __name__ == "__main__":  # Use this for running code, testing, debugging, etc
     dw.setUUIDs(guuid, suuid, muuid)
     #dw.insertData("../../../insert.json")
     dw.insertData("insert.json")
+    #Below: Example call to setVal function
+    dw.setVal("Python Class Stats", "students_present", 50, "handshake.out")
 
 
 

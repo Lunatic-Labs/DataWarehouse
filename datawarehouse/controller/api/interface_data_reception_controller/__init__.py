@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 
-from datawarehouse.service.data_insert_service import InsertDataService
+from datawarehouse.service.interface_data_insert_service import InterfaceInsertDataService
 
 data_reception_bp = Blueprint("interface_data_reception_bp", __name__, url_prefix="/interface_store")
 ######
@@ -10,12 +10,15 @@ data_reception_bp = Blueprint("interface_data_reception_bp", __name__, url_prefi
 
 @data_reception_bp.route("/", methods=["POST"])
 def store_data():
+    #how to receive data from interface?
     json = request.json
-    service = InsertDataService()
+    service = InterfaceInsertDataService() #InterfaceInsertDataService() class that has a function for converting data from interface into a JSON-formatted string. 
+    json = service.dataToJSON() #call with passed data
     # implement this eventually
-    err = service.verifyInformation(json)
+    err = service.verifyInformation(json)   #Either verify data or verify the created .json
     if err:
         return err
+
 
     service.addData(json)
     return "success", 200

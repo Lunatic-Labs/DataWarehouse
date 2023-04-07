@@ -9,10 +9,6 @@ from datawarehouse.model import metric
 
 class InsertDataService(BaseService):
     session = db.session
-    def dataToJSON(self,  ): #take in the interface data
-        
-
-        return #the created json
     
     def verifyInformation(self, data):
         """

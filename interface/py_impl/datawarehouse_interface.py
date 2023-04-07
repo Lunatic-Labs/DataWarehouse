@@ -8,6 +8,7 @@ from io import BytesIO
 import certifi
 import uuid
 import json
+import logging
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
@@ -57,13 +58,36 @@ class DWInterface:
         outfp = None
         json_file = None
         with open(json_filepath) as f:
-            json_file = json.load(f)
+            try:
+                json_file = json.load(f)
+            except Exception as Argument:
+ 
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
 
         print(json.dumps(json_file))
 
         # Open the file if it is specified.
         if out_filepath != None:
-            outfp = open(out_filepath, "w")
+            try: 
+                outfp = open(out_filepath, "w")
+
+            except Exception as Argument:
+ 
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
 
         # Create a buffer to recieve data.
         buf = BytesIO()
@@ -79,7 +103,19 @@ class DWInterface:
 
         # Write to a file if an outfile is specified.
         if out_filepath != None:
-            outfp.write(response)
+            try:
+                outfp.write(response)
+
+            except Exception as Argument:
+ 
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
 
         return response
 
@@ -102,7 +138,18 @@ class DWInterface:
 
         # Open the file if it is specified.
         if out_filepath != None:
-            outfp = open(out_filepath, "w")
+            try:
+                outfp = open(out_filepath, "w")
+            except Exception as Argument:
+ 
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
 
         # Create the url. It should be: 'http://ip_addr:port/group_uuid/source_uuid/query_string
         url = (
@@ -133,7 +180,19 @@ class DWInterface:
 
         # Write to a file if an outfile is specified.
         if out_filepath != None:
-            outfp.write(response)
+            try:
+                outfp.write(response)
+
+            except Exception as Argument:
+ 
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
 
         return response
 
@@ -141,8 +200,18 @@ class DWInterface:
         try:
             uuid.UUID(str(unverified_uuid))
             return True
-        except ValueError:
-            return False
+        except ValueError as Argument:
+            
+            # creating/opening a file
+                error = open("pyErrorFile.txt", "a")
+
+            # writing in the file
+                error.write(str(Argument))
+
+            # closing the file
+                error.close()
+            
+        return False
 
     # Public Functions.
 

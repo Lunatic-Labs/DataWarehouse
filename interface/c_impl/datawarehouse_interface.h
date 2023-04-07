@@ -10,6 +10,11 @@
 
 typedef struct DWInterface DWInterface;
 
+void debug(DWInterface *dwi);
+
+void dw_interface_gen_metadata(DWInterface *dwi);
+void dw_interface_gen_insert(DWInterface *dwi);
+
 // Creates a new instance of the DWInterface struct.
 // It takes a username and password and puts them in the DWInterface.
 // It also takes an environment to determine where the server is.
@@ -72,8 +77,10 @@ Source *dw_interface_source_create(char *name);
 
 Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units);
 
+void dw_interface_push_group(DWInterface *dwi, Group *group);
+
 void dw_interface_push_source(Group *group, Source *source);
 
-void dw_interface_push_metric(Group *group, Metric *metric);
+void dw_interface_push_metric(Source *source, Metric *metric);
 
 #endif // DATAWAREHOUSE_INTERFACE

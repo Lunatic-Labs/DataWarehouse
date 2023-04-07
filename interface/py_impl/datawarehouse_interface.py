@@ -19,6 +19,10 @@ class DWInterface:
     insert_path = "/api/store/"
     query_path = "/api/query/"
 
+    interface_handshake_path = "/api/interface_prepare/"
+    interface_insert_path = "/api/interface_store/"
+    interface_query_path = "/api/interface_query/" 
+
     development_port = ":5000"
     staging_port = ":4000"
     production_port = ":3000"
@@ -45,6 +49,9 @@ class DWInterface:
         self.__handshake_url = self.__authority + self.handshake_path
         self.__insert_url = self.__authority + self.insert_path
         self.__query_url = self.__authority + self.query_path
+        self.__interface_handshake_url = self.__authority + self.interface_handshake_path
+        self.__interface_insert_url = self.__authority + self.interface_insert_path
+        self.__interface_query_url = self.__authority + self.interface_query_path
         self.__curl_handle = pycurl.Curl()
 
     # Private Functions.
@@ -68,7 +75,7 @@ class DWInterface:
         # Create a buffer to recieve data.
         buf = BytesIO()
 
-        self.__curl_handle.setopt(self.__curl_handle.URL, self.__handshake_url)
+        self.__curl_handle.setopt(self.__curl_handle.URL, self.__handshake_url) #Should use interface_handshake_url?
         self.__curl_handle.setopt(pycurl.HTTPHEADER, ['Content-Type: application/json'])
         self.__curl_handle.setopt(self.__curl_handle.POSTFIELDS, json.dumps(json_file))
         self.__curl_handle.setopt(self.__curl_handle.WRITEFUNCTION, lambda x: None)
@@ -106,7 +113,7 @@ class DWInterface:
 
         # Create the url. It should be: 'http://ip_addr:port/group_uuid/source_uuid/query_string
         url = (
-            self.__query_url
+            self.__query_url    #Should be interface_query_url?
             + self.__group_uuid
             + "/"
             + self.__source_uuid

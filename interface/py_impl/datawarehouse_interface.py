@@ -11,6 +11,42 @@ import json
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
+#Data hierarchy (DWI > G > S > M). 
+# Unlike their first implementation, using solely to store names and UUIDs.
+#These are used in the setVal() function later.
+class Metric:
+    def __init__(
+        self,
+        name,
+        uuid=None
+    ):
+        self.name = name
+        self.uuid = uuid
+
+class Source:
+    def __init__(
+        self,
+        name,
+        metric=None,
+        uuid=None
+    ):
+        self.name = name
+        self.metrics = list(metric)
+        self.uuid = uuid
+
+class Group:
+    def  __init__(
+        self,
+        classification,
+        name,
+        source=None,
+        uuid=None
+    ):
+        self.classification = classification
+        self.name = name
+        self.sources = list(source)
+        self.uuid = uuid
+
 class DWInterface:
     remote_ip_address = "3.216.190.202"
     local_ip_address = "127.0.0.1"
@@ -53,6 +89,7 @@ class DWInterface:
         self.__interface_insert_url = self.__authority + self.interface_insert_path
         self.__interface_query_url = self.__authority + self.interface_query_path
         self.__curl_handle = pycurl.Curl()
+        self.groups = list()
 
     # Private Functions.
 
@@ -171,13 +208,36 @@ class DWInterface:
             self.__group_uuid = group_uuid
             self.__source_uuid = source_uuid
             self.__metric_uuid = metric_uuid
+            #Set each UUID in related Group, Source, and Metric classes too?
         else:
             raise ValueError("Invalid UUIDs provided")
     
     def setVal(self, source, metric, value, handshake_filepath):
         #Receive Source and Metric by plaintext name
-        #Find related UUIDs for both
-        #Set the value at that Metric to value
+        #Find related UUIDs for both. Need to have classes saved for this?
+        source_uuid = ""
+        metric_uuid = ""
+        for i in self.groups:
+            for j in i.sources:
+                if j.name.lower() == source.lower():
+                    source_uuid = j.uuid    #placeholder line, NEED TO: store UUID in Source?
+                    source = j
+        for i in source.metrics:
+            if i.name.lower() == metric.lower():
+                metric_uuid = i.uuid        #placeholder 2, NEED TO: store UUID in Metric?
+
+        #If UUIDs were found properly
+        if (
+            source_uuid != "" 
+            and metric_uuid != ""
+            and self.__verifyUUID(source_uuid)
+            and self.__verifyUUID(metric_uuid)
+        ):
+            1
+            #NEED TO: Set the value at Metric (the found UUID, in the warehouse) to provided value
+        else:
+            raise ValueError("Could not find UUIDs based on provided names")
+            
 
 
 

@@ -7,10 +7,15 @@ from datawarehouse.config.db import config as db
 from datawarehouse.model import metric
 
 
-class InsertDataService(BaseService):
+class InterfaceInsertDataService(BaseService):
     session = db.session
     
-    def verifyInformation(self, data):
+    def dataToJSON(self,  ): #take in the interface data
+        
+
+        return #the created json
+
+    def verifyInformation(self, data):  
         """
         verifyInformation(self, data) -> Err
         Verifies that the provided UUID's exist in the tables

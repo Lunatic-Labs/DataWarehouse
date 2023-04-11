@@ -12,6 +12,9 @@ typedef struct DWInterface DWInterface;
 
 void debug(DWInterface *dwi);
 
+void dw_interface_gen_metadata(DWInterface *dwi);
+void dw_interface_gen_insert(DWInterface *dwi);
+
 // Creates a new instance of the DWInterface struct.
 // It takes a username and password and puts them in the DWInterface.
 // It also takes an environment to determine where the server is.

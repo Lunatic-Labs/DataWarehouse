@@ -218,8 +218,12 @@ class DWInterface:
         #Receive Source and Metric by plaintext name
 
         #Find related UUIDs for both
-        suuid = None
-        muuid = None
+        # Implementation v2: parse handshake_file as a dict
+        handshake = json.loads(handshake_filepath)
+        suuid = handshake[""]
+        muuid = handshake[""]
+
+        #Implementation v1: comb file line by line for name
         with open(handshake_filepath, "r") as file:
             lines = file.readlines()
             for row in lines:
@@ -241,6 +245,8 @@ class DWInterface:
             raise ValueError("Metric not in provided handshake file")
 
         #Write relevant data as string (":"-separated) and return 
+        #Format: "groupuid`name`classification`sourceuid`name`metricuid`asc`name`datatype"
+        return ... + '`' + ... + '`' + ... + '`' + suuid + '`' + ... + '`' + muuid + '`' + ... + '`' + ... + '`' + ...
 
     def setVal(self, source, metric, value, handshake_filepath):    #Function concept using nested classes for hierarchy, may not be used
         #Receive Source and Metric by plaintext name

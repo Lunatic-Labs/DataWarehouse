@@ -1,0 +1,17 @@
+{
+        "group_name": "Data Dogs",
+        "classification": "testing",
+        "sources": [
+                {
+                        "metrics": [
+                                {
+                                        "asc": false,
+                                        "data_type": "integer",
+                                        "name": "WeueKSwmjcGsYVThpwuf",
+                                        "units": "students"
+                                }
+                        ],
+                        "name": "Spedometer"
+                }
+        ]
+}

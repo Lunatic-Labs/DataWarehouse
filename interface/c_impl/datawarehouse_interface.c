@@ -464,6 +464,42 @@ void debug(DWInterface *dwi) {
   }
 }
 
+//this is where the function I'm working on goes 
+char* json_parser(char* json_filepath, char* source_name, char* metric_name, int val)
+{
+  char* toBeParsed = json_filepath;
+  char* token = strtok(toBeParsed, ":");
+  if (token == NULL) 
+  {
+    puts("empty string!");
+    return 1;
+  }
+  while(token)
+  {
+    token = strtok(NULL, ":");
+  }
+  //check for errors
+
+  //pseudocode for what the function should do
+  /*// Open the file.
+  file = open_file(json_filepath);
+
+  // Have some place to store tokens.
+  char tokens[TOKENS_CAP][TOKENS_CAP];
+
+  // Set all tokens to empty.
+  for (int i = 0; i < TOKENS_CAP; i++) {
+    tokens[i] = '\0';
+  }
+
+  // Loop through the lines of the file.
+  for (int i = 0; getline(file); i++) {
+    token = strtok(' ');
+    if (!token) continue;
+    // Do something with the token.
+  }*/
+}
+
 void dw_interface_push_group(DWInterface *dwi, Group *group) {
   dynamic_array_push(&dwi->groups, (void *)group);
 }

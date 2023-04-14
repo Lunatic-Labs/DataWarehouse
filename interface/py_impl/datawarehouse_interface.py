@@ -12,6 +12,44 @@ import logging
 
 # Pycurl Documentation: http://pycurl.io/docs/latest/quickstart.html
 
+#Data hierarchy (DWI > G > S > M). 
+# Unlike their first implementation, using solely to store names and UUIDs.
+#These are used in the setVal() function later.
+class Metric:
+    def __init__(
+        self,
+        name,
+        value=None,
+        uuid=None
+    ):
+        self.name = name
+        self.uuid = uuid
+        self.value = value
+
+class Source:
+    def __init__(
+        self,
+        name,
+        metric=None,
+        uuid=None
+    ):
+        self.name = name
+        self.metrics = list(metric)
+        self.uuid = uuid
+
+class Group:
+    def  __init__(
+        self,
+        classification,
+        name,
+        source=None,
+        uuid=None
+    ):
+        self.classification = classification
+        self.name = name
+        self.sources = list(source)
+        self.uuid = uuid
+
 class DWInterface:
     remote_ip_address = "3.216.190.202"
     local_ip_address = "127.0.0.1"
@@ -54,6 +92,7 @@ class DWInterface:
         self.__interface_insert_url = self.__authority + self.interface_insert_path
         self.__interface_query_url = self.__authority + self.interface_query_path
         self.__curl_handle = pycurl.Curl()
+        self.groups = list()
 
     # Private Functions.
 
@@ -240,13 +279,71 @@ class DWInterface:
             self.__group_uuid = group_uuid
             self.__source_uuid = source_uuid
             self.__metric_uuid = metric_uuid
+            #Set each UUID in related Group, Source, and Metric classes too?
         else:
             raise ValueError("Invalid UUIDs provided")
     
-    def setVal(self, source, metric, value, handshake_filepath):
+    def jsonToString(self, source, metric, handshake_filepath):
         #Receive Source and Metric by plaintext name
+
         #Find related UUIDs for both
-        #Set the value at that Metric to value
+        # Implementation v2: parse handshake_file as a dict
+        handshake = json.loads(handshake_filepath)
+        suuid = handshake[""]
+        muuid = handshake[""]
+
+        #Implementation v1: comb file line by line for name
+        with open(handshake_filepath, "r") as file:
+            lines = file.readlines()
+            for row in lines:
+                if source in row:
+                    #save source_uuid
+                    suuid = "find the UUID here"
+                    #look within source for metric
+                    temp = "replace with lines contained in source"
+                    for row2 in temp:
+                        if metric in row2:
+                            muuid = "find the UUID here"
+
+                            break #after finding Metric. No need to keep looking through Source.    
+                    break #after finding Source. No need to keep looking through file.
+
+        if suuid == None:
+            raise ValueError("Source not in provided handshake file")
+        elif muuid == None:
+            raise ValueError("Metric not in provided handshake file")
+
+        #Write relevant data as string (":"-separated) and return 
+        #Format: "groupuid`name`classification`sourceuid`name`metricuid`asc`name`datatype"
+        return ... + '`' + ... + '`' + ... + '`' + suuid + '`' + ... + '`' + muuid + '`' + ... + '`' + ... + '`' + ...
+
+    def setVal(self, source, metric, value, handshake_filepath):    #Function concept using nested classes for hierarchy, may not be used
+        #Receive Source and Metric by plaintext name
+        #Find related UUIDs for both. Need to have classes saved for this?
+        source_uuid = ""
+        metric_uuid = ""
+        for i in self.groups:
+            for j in i.sources:
+                if j.name.lower() == source.lower():
+                    source_uuid = j.uuid    #placeholder line, NEED TO: store UUID in Source?
+                    source = j
+        for i in source.metrics:
+            if i.name.lower() == metric.lower():
+                metric_uuid = i.uuid        #placeholder 2, NEED TO: store UUID in Metric?
+                metric = j
+
+        #If UUIDs were found properly
+        if (
+            source_uuid != "" 
+            and metric_uuid != ""
+            and self.__verifyUUID(source_uuid)
+            and self.__verifyUUID(metric_uuid)
+        ):
+            metric.value = value
+            #NEED TO: Set the value at Metric (the found UUID, in the warehouse) to provided value
+        else:
+            raise ValueError("Could not find UUIDs based on provided names")
+            
 
 
 
@@ -262,6 +359,5 @@ if __name__ == "__main__":  # Use this for running code, testing, debugging, etc
     dw.insertData("insert.json")
     #Below: Example call to setVal function
     dw.setVal("Python Class Stats", "students_present", 50, "handshake.out")
-
 
 

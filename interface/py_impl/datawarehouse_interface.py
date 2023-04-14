@@ -214,69 +214,49 @@ class DWInterface:
         else:
             raise ValueError("Invalid UUIDs provided")
     
-    def jsonToString(self, source, metric, handshake_filepath):
-        #Receive Source and Metric by plaintext name
-
+    def jsonToString(self, group, source, metric, handshake_filepath):
+        #Receive Group, Source, and Metric by plaintext name
+        guuid = None
+        suuid = None
+        muuid = None
         #Find related UUIDs for both
-        # Implementation v2: parse handshake_file as a dict
+        #Implementation v3: comb file line by line for names and find other info. based on current line number
         handshake = json.loads(handshake_filepath)
-        suuid = handshake[""]
-        muuid = handshake[""]
-
-        #Implementation v1: comb file line by line for name
         with open(handshake_filepath, "r") as file:
             lines = file.readlines()
-            for row in lines:
-                if source in row:
-                    #save source_uuid
-                    suuid = "find the UUID here"
-                    #look within source for metric
-                    temp = "replace with lines contained in source"
-                    for row2 in temp:
-                        if metric in row2:
-                            muuid = "find the UUID here"
-
-                            break #after finding Metric. No need to keep looking through Source.    
-                    break #after finding Source. No need to keep looking through file.
-
-        if suuid == None:
-            raise ValueError("Source not in provided handshake file")
-        elif muuid == None:
-            raise ValueError("Metric not in provided handshake file")
+            i = 0
+            for row in lines:                           #.lower()'ing all strings as a safeguard
+                if group.lower() in row.lower():        #If name found, 
+                    temp = (i-2).split(':')                 #GUUID should be 2 lines previous.
+                    guuid = temp[1].strip(",\"")
+                    temp = (i-3).split(':')                 #Classification should be 3 lines previous.
+                    gclass = temp[1].strip(",\"")
+                elif source.lower() in row.lower():     #If name found,
+                    temp = (i+1).split(':')                 #SUUID should be on next line.
+                    suuid = temp[1].strip(",\"")
+                elif metric.lower() in row.lower():     #If name found, 
+                    temp = (i-1).split(':')                 #MUUID should be on previous line.
+                    muuid = temp[1].strip(",\"")    
+                    temp = (i-2).split(':')                 #datatype should be 2 lines previous.
+                    mdata = temp[1].strip(",\"")
+                    temp = (i-3).split(':')                 #asc should be 3 lines previous.
+                    masc = temp[1].strip(",\"")    
+                i += 1  
 
         #Write relevant data as string (":"-separated) and return 
         #Format: "groupuid`name`classification`sourceuid`name`metricuid`asc`name`datatype"
-        return ... + '`' + ... + '`' + ... + '`' + suuid + '`' + ... + '`' + muuid + '`' + ... + '`' + ... + '`' + ...
 
-    def setVal(self, source, metric, value, handshake_filepath):    #Function concept using nested classes for hierarchy, may not be used
-        #Receive Source and Metric by plaintext name
-        #Find related UUIDs for both. Need to have classes saved for this?
-        source_uuid = ""
-        metric_uuid = ""
-        for i in self.groups:
-            for j in i.sources:
-                if j.name.lower() == source.lower():
-                    source_uuid = j.uuid    #placeholder line, NEED TO: store UUID in Source?
-                    source = j
-        for i in source.metrics:
-            if i.name.lower() == metric.lower():
-                metric_uuid = i.uuid        #placeholder 2, NEED TO: store UUID in Metric?
-                metric = j
-
-        #If UUIDs were found properly
-        if (
-            source_uuid != "" 
-            and metric_uuid != ""
-            and self.__verifyUUID(source_uuid)
-            and self.__verifyUUID(metric_uuid)
-        ):
-            metric.value = value
-            #NEED TO: Set the value at Metric (the found UUID, in the warehouse) to provided value
-        else:
-            raise ValueError("Could not find UUIDs based on provided names")
-            
-
-
+        self.setUUIDs(guuid, suuid, muuid)
+        #If this setUUIDs() call is inappropriate, revert to the below logic
+        
+        # if guuid == None:
+        #     raise ValueError("Group not in provided handshake file")
+        # elif suuid == None:
+        #     raise ValueError("Source not in provided handshake file")
+        # elif muuid == None:
+        #     raise ValueError("Metric not in provided handshake file")
+        #else:
+        return guuid + '`' + group + '`' + gclass + '`' + suuid + '`' + source + '`' + muuid + '`' + masc + '`' + metric + '`' + mdata
 
 if __name__ == "__main__":  # Use this for running code, testing, debugging, etc.
     guuid = "2632e2c8-a9ef-4c59-b555-edf5d5a51dfe"
@@ -288,7 +268,7 @@ if __name__ == "__main__":  # Use this for running code, testing, debugging, etc
     dw.setUUIDs(guuid, suuid, muuid)
     #dw.insertData("../../../insert.json")
     dw.insertData("insert.json")
-    #Below: Example call to setVal function
-    dw.setVal("Python Class Stats", "students_present", 50, "handshake.out")
+    #Below: Example call to jsonToString()
+    print(dw.jsonToString("Lunatic Labs University", "Python Class Stats", "students_present", "handshake.out"))
 
 

@@ -32,6 +32,7 @@
 /* Libraries */
 
 #include <assert.h> // Debugging. Should not be in release.
+#include <ctype.h>  // isalnum()
 #include <errno.h>  // Error handling.
 #include <regex.h>  // For verifying UUIDS are correct based off of regular expression.
 #include <stdio.h>  // I/O.

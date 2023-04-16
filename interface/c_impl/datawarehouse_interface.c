@@ -472,6 +472,12 @@ char *json_parser(const char *json_filepath,
 
   FILE *fp = open_file(json_filepath, "r");
   char buf[TOKEN_CAP];
+  char tokens[TOKEN_CAP][TOKEN_CAP];
+  size_t tokens_sz = 0;
+
+  for (int i = 0; i < TOKEN_CAP; i++) {
+    tokens[i][0] = '\0';
+  }
 
   while (fgets(buf, TOKEN_CAP, fp) != NULL) {
 
@@ -482,7 +488,9 @@ char *json_parser(const char *json_filepath,
     char *token = strtok(line, " ");
 
     while (token) {
-      printf("%s", token);
+      tokens[]
+      // if (isalnum(token[0])) {
+      // }
       token = strtok(NULL, " "); 
     }
   }
@@ -508,21 +516,6 @@ void dw_interface_push_metric(Group *group, Metric *metric) {
   NOP(group);
   NOP(metric);
   UNIMPLEMENTED;
-  //  for (size_t i = 0; i < dwi->groups.len; i++) {
-  //    Group g = dwi->groups.data.group[i];
-  //    printf("\tGroup: %ld\n", i+1);
-  //    printf("\t%s\t%s\n", g.classification, g.group_name);
-  //    for (size_t j = 0; j < g.sources.len; j++) {
-  //      Source s = g.sources.data.source[j];
-  //      printf("\t\tSource: %ld\n", j+1);
-  //      printf("\t\t%s\n", s.name);
-  //      for (size_t k = 0; k < s.metrics.len; k++) {
-  //    Metric m = s.metrics.data.metric[i];
-  //    printf("\t\t\tMetric: %ld\n", k+1);
-  //    printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
-  //      }
-  //    }
-  //  }
 }
 
 /*

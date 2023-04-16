@@ -17,6 +17,9 @@
 // Length of UUIDs.
 #define UUID_LEN 36
 
+// The max capacity of tokens during JSON parsing.
+#define TOKEN_CAP 256
+
 /* Development Macros */
 
 // `No Operation`. Use to surpress `unused variable` warnings.

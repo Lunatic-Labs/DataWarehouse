@@ -421,18 +421,18 @@ Group *dw_interface_group_create(char *classification, char *group_name) {
   Group *group          = s_malloc(sizeof(Group));
   group->classification = classification;
   group->group_name     = group_name;
-  group->sources        = NULL;
-  group->sources_len    = 0;
-  group->sources_cap    = 1;
+  // group->sources        = NULL;
+  // group->sources_len    = 0;
+  // group->sources_cap    = 1;
   return group;
 }
 
 Source *dw_interface_source_create(char *name) {
   Source *source       = s_malloc(sizeof(Source));
   source->name         = name;
-  source->metrics      = NULL;
-  source->metrics_len  = 0;
-  source->metrics_cap  = 1;
+  // source->metrics      = NULL;
+  // source->metrics_len  = 0;
+  // source->metrics_cap  = 1;
   return source;
 }
 
@@ -456,48 +456,42 @@ void debug(DWInterface *dwi) {
       printf("\t\tSource: %ld\n", j+1);
       printf("\t\t%s\n", s.name);
       for (size_t k = 0; k < s.metrics.len; k++) {
-	Metric m = s.metrics.data.metric[i];
-	printf("\t\t\tMetric: %ld\n", k+1);
-	printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
+        Metric m = s.metrics.data.metric[i];
+        printf("\t\t\tMetric: %ld\n", k+1);
+        printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
       }
     }
   }
 }
 
 //this is where the function I'm working on goes 
-char* json_parser(char* json_filepath, char* source_name, char* metric_name, int val)
-{
-  char* toBeParsed = json_filepath;
-  char* token = strtok(toBeParsed, ":");
-  if (token == NULL) 
-  {
-    puts("empty string!");
-    return 1;
-  }
-  while(token)
-  {
-    token = strtok(NULL, ":");
-  }
-  //check for errors
+char *json_parser(const char *json_filepath,
+                  const char *source_name,
+                  const char *metric_name,
+                  int val) {
 
-  //pseudocode for what the function should do
-  /*// Open the file.
-  file = open_file(json_filepath);
+  FILE *fp = open_file(json_filepath, "r");
+  char buf[TOKEN_CAP];
 
-  // Have some place to store tokens.
-  char tokens[TOKENS_CAP][TOKENS_CAP];
+  while (fgets(buf, TOKEN_CAP, fp) != NULL) {
 
-  // Set all tokens to empty.
-  for (int i = 0; i < TOKENS_CAP; i++) {
-    tokens[i] = '\0';
+    char line[TOKEN_CAP];
+
+    // Not sure if this is 100% necessary, but I'll put it here jic.
+    memcpy(line, buf, TOKEN_CAP);
+    char *token = strtok(line, " ");
+
+    while (token) {
+      printf("%s", token);
+      token = strtok(NULL, " "); 
+    }
   }
 
-  // Loop through the lines of the file.
-  for (int i = 0; getline(file); i++) {
-    token = strtok(' ');
-    if (!token) continue;
-    // Do something with the token.
-  }*/
+  NOP(source_name);
+  NOP(metric_name);
+  NOP(val);
+  fclose(fp);
+  return NULL;
 }
 
 void dw_interface_push_group(DWInterface *dwi, Group *group) {
@@ -587,9 +581,9 @@ DWInterface *dw_interface_create(char *username,
   return dwi;
 }
 
-void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
-  dwi->groups = groups;
-}
+// void dw_interface_set_groups(DWInterface *dwi, Group *groups) {
+//   dwi->groups = groups;
+// }
 
 void dw_interface_set_uuids(DWInterface *dwi,
                             const char group_uuid[UUID_LEN],
@@ -802,14 +796,14 @@ void dw_interface_destroy(DWInterface *dwi)
   curl_easy_cleanup(dwi->curl_handle);
 
   // Free all groups, sources, and metrics.
-  for (size_t i = 0; i < dwi->groups_len; i++) {
-    for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
-      for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
-	free(dwi->groups[i].sources[j].metrics);
-      }
-      free(dwi->groups[i].sources);
-    }
-    free(dwi->groups);
-  }
+  // for (size_t i = 0; i < dwi->groups_len; i++) {
+  //   for (size_t j = 0; j < dwi->groups[i].sources_len; j++) {
+  //     for (size_t k = 0; k < dwi->groups[i].sources[j].metrics_len; k++) {
+  //       free(dwi->groups[i].sources[j].metrics);
+  //     }
+  //     free(dwi->groups[i].sources);
+  //   }
+  //   free(dwi->groups);
+  // }
   free(dwi);
 }

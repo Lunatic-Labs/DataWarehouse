@@ -464,10 +464,22 @@ void debug(DWInterface *dwi) {
   }
 }
 
+void trim_whitespace(char *string, size_t sz) {
+  for (size_t i = 0; i < sz; i++) {
+    char c = *(string + i);
+    if (c == ' ') {
+      
+      sz -= 1;
+    }
+  }
+}
+
+#define QUOTE 34
+
 //this is where the function I'm working on goes 
 char *json_parser(const char *json_filepath,
-                  const char *source_name,
-                  const char *metric_name,
+                  char *source_name,
+                  char *metric_name,
                   int val) {
 
   FILE *fp = open_file(json_filepath, "r");
@@ -480,19 +492,22 @@ char *json_parser(const char *json_filepath,
   }
 
   while (fgets(buf, TOKEN_CAP, fp) != NULL) {
-
     char line[TOKEN_CAP];
 
     // Not sure if this is 100% necessary, but I'll put it here jic.
     memcpy(line, buf, TOKEN_CAP);
-    char *token = strtok(line, " ");
+    char *token = strtok(line, ": ");
 
     while (token) {
-      tokens[]
-      // if (isalnum(token[0])) {
-      // }
+      if (token[0] == QUOTE || isalnum(token[0])) {
+        (void)strcpy(tokens[tokens_sz++], token);
+      }
       token = strtok(NULL, " "); 
     }
+  }
+
+  for (size_t i = 0; i < tokens_sz; i++) {
+    printf("%s", tokens[i]);
   }
 
   NOP(source_name);

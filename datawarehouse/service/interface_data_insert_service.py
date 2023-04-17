@@ -1,4 +1,7 @@
 import sqlalchemy
+import json
+import ast
+
 from datawarehouse.service import BaseService
 
 from datetime import datetime
@@ -10,10 +13,19 @@ from datawarehouse.model import metric
 class InterfaceInsertDataService(BaseService):
     session = db.session
     
-    def dataToJSON(self,  ): #take in the interface data
-        
+    # Takes a string and imports it into a json formated file
+    # Need to check and see how the string will be formated but works with a string formated like this:
+    # uuids = '{ "source_uid": "4aa950ae-f350-4a51-a21d-07817cd408e1", "metrics":[ {"metric_uid": "ac64dfb2-3d0f-48b5-88ab-cedf1a0c13d1", "value": "50"} ] }'
+    def dataToJSON(self, data): #take in the interface data
+        str = data
 
-        return #the created json
+        uuid_string = ast.literal_eval(str)
+        json_object = json.dumps(uuid_string, indent=4)
+
+        with open("insert.out", "w") as outfile:
+            outfile.write(json_object)
+
+        return json_object #the created json
 
     def verifyInformation(self, data):  
         """

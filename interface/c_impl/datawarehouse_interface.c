@@ -488,7 +488,7 @@ char *json_parser(const char *json_filepath,
     char *token = strtok(line, " ");
 
     while (token) {
-      tokens[]
+      tokens[];
       // if (isalnum(token[0])) {
       // }
       token = strtok(NULL, " "); 

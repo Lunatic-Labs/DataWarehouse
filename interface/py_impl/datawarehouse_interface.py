@@ -283,38 +283,40 @@ class DWInterface:
         else:
             raise ValueError("Invalid UUIDs provided")
     
-    def jsonToString(self, group, source, metric, handshake_filepath):
+    def jsonToString(self, source, metric, value, handshake_filepath):
         #Receive Group, Source, and Metric by plaintext name
-        guuid = None
+        #guuid = None
         suuid = None
         muuid = None
+        if (handshake_filepath == None):
+            raise ValueError("Please pass a handshake filepath")
         #Find related UUIDs for both
         #Implementation v3: comb file line by line for names and find other info. based on current line number
-        handshake = json.loads(handshake_filepath)
+        #handshake = json.loads(handshake_filepath)
         with open(handshake_filepath, "r") as file:
             lines = file.readlines()
             i = 0
             for row in lines:                           #.lower()'ing all strings as a safeguard
-                if group.lower() in row.lower():        #If name found, 
-                    temp = (i-2).split(':')                 #GUUID should be 2 lines previous.
-                    guuid = temp[1].strip(",\"")
-                    temp = (i-3).split(':')                 #Classification should be 3 lines previous.
-                    gclass = temp[1].strip(",\"")
-                elif source.lower() in row.lower():     #If name found,
-                    temp = (i+1).split(':')                 #SUUID should be on next line.
-                    suuid = temp[1].strip(",\"")
+                # if group.lower() in row.lower():        #If name found, 
+                #     temp = (loop-2).split(':')                 #GUUID should be 2 lines previous.
+                #     guuid = temp[1].strip(",\"")
+                #     temp = (loop-3).split(':')                 #Classification should be 3 lines previous.
+                #     gclass = temp[1].strip(",\"")
+                if source.lower() in row.lower():     #If name found,
+                    temp = lines[i+1].split(':')                 #SUUID should be on next line.
+                    suuid = temp[1].strip(",\"\n ")
                 elif metric.lower() in row.lower():     #If name found, 
-                    temp = (i-1).split(':')                 #MUUID should be on previous line.
-                    muuid = temp[1].strip(",\"")    
-                    temp = (i-2).split(':')                 #datatype should be 2 lines previous.
-                    mdata = temp[1].strip(",\"")
-                    temp = (i-3).split(':')                 #asc should be 3 lines previous.
-                    masc = temp[1].strip(",\"")    
-                i += 1  
+                    temp = lines[i-1].split(':')                 #MUUID should be on previous line.
+                    muuid = temp[1].strip(",\"\n ")    
+                    temp = lines[i-2].split(':')                 #datatype should be 2 lines previous.
+                    mdata = temp[1].strip(",\"\n ")
+                    temp = lines[i-3].split(':')                 #asc should be 3 lines previous.
+                    masc = temp[1].strip(",\"\n ")    
+                i += 1   
 
         #Write relevant data as string (":"-separated) and return 
         #Format: "groupuid`name`classification`sourceuid`name`metricuid`asc`name`datatype"
-
+        #Format 4/17/2023: "groupuuid`sourceuuid`metricuuid`value"
         self.setUUIDs(guuid, suuid, muuid)
         #If this setUUIDs() call is inappropriate, revert to the below logic
         
@@ -325,8 +327,9 @@ class DWInterface:
         # elif muuid == None:
         #     raise ValueError("Metric not in provided handshake file")
         #else:
-        return guuid + '`' + group + '`' + gclass + '`' + suuid + '`' + source + '`' + muuid + '`' + masc + '`' + metric + '`' + mdata
-
+        #return guuid + '`' + group + '`' + gclass + '`' + suuid + '`' + source + '`' + muuid + '`' + masc + '`' + metric + '`' + mdata
+        return suuid + '`' + muuid + '`' + str(value)
+    
 if __name__ == "__main__":  # Use this for running code, testing, debugging, etc.
     guuid = "2632e2c8-a9ef-4c59-b555-edf5d5a51dfe"
     suuid = "99113101-f382-4c1f-a687-96479237cac8"
@@ -338,6 +341,6 @@ if __name__ == "__main__":  # Use this for running code, testing, debugging, etc
     #dw.insertData("../../../insert.json")
     dw.insertData("insert.json")
     #Below: Example call to jsonToString()
-    print(dw.jsonToString("Lunatic Labs University", "Python Class Stats", "students_present", "handshake.out"))
+    print(dw.jsonToString("Python Class Stats", "students_present", 50, "handshake.out"))
 
 

@@ -464,19 +464,23 @@ void debug(DWInterface *dwi) {
   }
 }
 
-void trim_whitespace(char *string, size_t sz) {
-  for (size_t i = 0; i < sz; i++) {
-    char c = *(string + i);
-    if (c == ' ') {
-      
-      sz -= 1;
+char *trim_whitespace(char **str, size_t *trimmed_str_sz) {
+  const size_t def_sz = 128;
+  char *trimmed_str = s_malloc(sizeof(char) * def_sz);
+  memset(trimmed_str, '\0', sizeof(trimmed_str[0]) * def_sz);
+  *trimmed_str_sz = 0;
+  for (size_t i = 0; *(*str + i) != '\0'; i++) {
+    if (*(*str + i) != ' ') {
+      // todo: reallocate trimmed_str if needed.
+      trimmed_str[*trimmed_str_sz] = *(*str + i);
+      *trimmed_str_sz += 1;
     }
   }
+  return trimmed_str;
 }
 
 #define QUOTE 34
 
-//this is where the function I'm working on goes 
 char *json_parser(const char *json_filepath,
                   char *source_name,
                   char *metric_name,
@@ -486,6 +490,13 @@ char *json_parser(const char *json_filepath,
   char buf[TOKEN_CAP];
   char tokens[TOKEN_CAP][TOKEN_CAP];
   size_t tokens_sz = 0;
+
+  size_t n, m;
+  char *n_source_name = trim_whitespace(&source_name, &n);
+  char *n_metric_name = trim_whitespace(&metric_name, &m);
+
+  printf("Source: %s\n", n_source_name);
+  printf("Metric: %s\n", n_metric_name);
 
   for (int i = 0; i < TOKEN_CAP; i++) {
     tokens[i][0] = '\0';
@@ -514,6 +525,8 @@ char *json_parser(const char *json_filepath,
   NOP(metric_name);
   NOP(val);
   fclose(fp);
+  free(n_source_name);
+  free(n_metric_name);
   return NULL;
 }
 

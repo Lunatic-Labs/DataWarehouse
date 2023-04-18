@@ -12,7 +12,7 @@ typedef struct DWInterface DWInterface;
 
 void debug(DWInterface *dwi);
 
-char *json_parser(const char *json_filepath, const char *source_name, const char *metric_name, int val);
+char *json_parser(const char *json_filepath, char *source_name, char *metric_name, int val);
 void dw_interface_gen_metadata(DWInterface *dwi);
 void dw_interface_gen_insert(DWInterface *dwi);
 

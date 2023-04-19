@@ -1,23 +1,23 @@
 import json
 
-class Metric:
-    def __init__(self, asc, dt, name, units):
-        self.asc = asc
-        self.datatype = dt
-        self.name = name
-        self.units = units
-
-class Source:
-    def __init__(self, name):
-        self.name = name
-        self.metrics = []
-
-class Group:
+class CreateHandshake:
     def __init__(self, class_, name):
-        self.classification = class_
-        self.name = name
-        self.sources = []
+        self.dict_object = {"classification": class_, "group_name": name, "sources": []}
 
-aa = Group(1, 2, 3)
+    def insert_metric_into_source(self, asc, dt, name, units):
+        self.dict_object["sources"][len(self.dict_object['sources']) - 1]["metrics"].append({"asc": asc, "dt": dt, "name": name, "units": units})
 
-print(aa.a, aa.b, aa.c)
+    def insert_source_into_group(self, name):
+        self.dict_object["sources"].append({"name": name, "metrics": []})
+
+def create_handshake():
+    handshake = CreateHandshake("Academia", "Lunatic Labs University")
+    handshake.insert_source_into_group("Python Class Stats")
+    handshake.insert_metric_into_source(False, "5", "students_present_asdf", "students_asdf")
+    handshake.insert_source_into_group("Python Class Stats 2")
+    handshake.insert_metric_into_source(False, "4", "students_present", "students")
+    
+    group = json.dumps(handshake.dict_object, indent=4)
+    print(group)
+
+create_handshake()

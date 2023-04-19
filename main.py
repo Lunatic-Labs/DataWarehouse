@@ -1,23 +1,71 @@
 import json
 
+'''
+This class creates a handshake JSON file in the below format: 
+{
+    "classification": "Academia",
+    "group_name": "Lunatic Labs University",
+    "sources": [
+        {
+            "name": "Python Class Stats",
+            "metrics": [
+                {
+                    "asc": false,
+                    "dt": "5",
+                    "name": "students_present_asdf",
+                    "units": "students_asdf"
+                }
+            ]
+        },
+        {
+            "name": "Python Class Stats 2",
+            "metrics": [
+                {
+                    "asc": false,
+                    "dt": "4",
+                    "name": "students_present",
+                    "units": "students"
+                }
+            ]
+        }
+    ]
+}
+
+The JSON object that is output is received by the handshake protocol, where the UUIDs are 
+added to the object
+'''
+
 class CreateHandshake:
     def __init__(self, class_, name):
         self.dict_object = {"classification": class_, "group_name": name, "sources": []}
 
-    def insert_metric_into_source(self, asc, dt, name, units):
-        self.dict_object["sources"][len(self.dict_object['sources']) - 1]["metrics"].append({"asc": asc, "dt": dt, "name": name, "units": units})
+    def append_metric_into_last_source(self, asc, dt, name, units):
+        self.dict_object["sources"][len(self.dict_object['sources']) - 1]["metrics"].append(
+            {"asc": asc, "dt": dt, "name": name, "units": units}
+        )
 
-    def insert_source_into_group(self, name):
+    def append_source_into_group(self, name):
         self.dict_object["sources"].append({"name": name, "metrics": []})
 
-def create_handshake():
-    handshake = CreateHandshake("Academia", "Lunatic Labs University")
-    handshake.insert_source_into_group("Python Class Stats")
-    handshake.insert_metric_into_source(False, "5", "students_present_asdf", "students_asdf")
-    handshake.insert_source_into_group("Python Class Stats 2")
-    handshake.insert_metric_into_source(False, "4", "students_present", "students")
-    
-    group = json.dumps(handshake.dict_object, indent=4)
-    print(group)
+    def convert_to_json(self):
+        final_output = json.dumps(self.dict_object, indent=4)
+        print(final_output)
 
-create_handshake()
+if __name__ == "__main__":
+    # Create the outermost layer of the onion
+    handshake = CreateHandshake("Academia", "Lunatic Labs University")
+
+    # Add source #1
+    handshake.append_source_into_group("Python Class Stats")
+
+    # Add metric #1 inside of source #1
+    handshake.append_metric_into_last_source(False, "5", "students_present_asdf", "students_asdf")
+
+    # Add source #2
+    handshake.append_source_into_group("Python Class Stats 2")
+
+    # Add metric #1 inside of source #2
+    handshake.append_metric_into_last_source(False, "4", "students_present", "students")
+
+    # Convert to JSON object
+    handshake.convert_to_json()

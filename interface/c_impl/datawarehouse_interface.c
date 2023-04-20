@@ -464,10 +464,26 @@ void debug(DWInterface *dwi) {
   }
 }
 
-//this is where the function I'm working on goes 
+#define QUOTE 34
+
+char *remove_char(char *str, size_t *trimmed_str_sz, char removal) {
+  const size_t def_sz = 128;
+  char *trimmed_str = s_malloc(sizeof(char) * def_sz);
+  memset(trimmed_str, '\0', sizeof(trimmed_str[0]) * def_sz);
+  *trimmed_str_sz = 0;
+  for (size_t i = 0; *(str + i) != '\0'; i++) {
+    if (*(str + i) != removal) {
+      // todo: reallocate trimmed_str if needed.
+      trimmed_str[*trimmed_str_sz] = *(str + i);
+      *trimmed_str_sz += 1;
+    }
+  }
+  return trimmed_str;
+}
+
 char *json_parser(const char *json_filepath,
-                  const char *source_name,
-                  const char *metric_name,
+                  char *source_name,
+                  char *metric_name,
                   int val) {
 
   FILE *fp = open_file(json_filepath, "r");
@@ -475,23 +491,37 @@ char *json_parser(const char *json_filepath,
   char tokens[TOKEN_CAP][TOKEN_CAP];
   size_t tokens_sz = 0;
 
+  size_t n, m;
+  char *n_source_name = remove_char(source_name, &n, ' ');
+  char *n_metric_name = remove_char(metric_name, &m, ' ');
+
+  printf("Source: %s\n", n_source_name);
+  printf("Metric: %s\n", n_metric_name);
+
   for (int i = 0; i < TOKEN_CAP; i++) {
     tokens[i][0] = '\0';
   }
 
   while (fgets(buf, TOKEN_CAP, fp) != NULL) {
-
     char line[TOKEN_CAP];
 
     // Not sure if this is 100% necessary, but I'll put it here jic.
     memcpy(line, buf, TOKEN_CAP);
-    char *token = strtok(line, " ");
+    char *token = strtok(line, ": ");
 
     while (token) {
-      tokens[]
-      // if (isalnum(token[0])) {
-      // }
+      if (token[0] == QUOTE || isalnum(token[0])) {
+        (void)strcpy(tokens[tokens_sz++], token);
+      }
+      size_t token_trim_sz = 0;
       token = strtok(NULL, " "); 
+      char *token_trim = remove_char(token, &token_trim_sz, QUOTE);
+    }
+  }
+
+  for (size_t i = 0; i < tokens_sz; i++) {
+    if (strcmp(tokens[i], n_source_name) == 0 || strcmp(tokens[i], n_metric_name) == 0){
+      printf("token: %s", tokens[i+1]);
     }
   }
 
@@ -499,6 +529,8 @@ char *json_parser(const char *json_filepath,
   NOP(metric_name);
   NOP(val);
   fclose(fp);
+  free(n_source_name);
+  free(n_metric_name);
   return NULL;
 }
 

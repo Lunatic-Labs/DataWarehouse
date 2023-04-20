@@ -26,8 +26,8 @@ class InterfaceInsertDataService(BaseService):
         
         formatted_string = '{ "source_uid": "%(source_uid)s", "metrics":[ {"metric_uid": "%(metric_uid)s", "value": "%(value)d"} ] }' % parsed_string
 
-        uuid_string = ast.literal_eval(formatted_string)
-        json_object = json.dumps(uuid_string, indent=4)
+        json_string = ast.literal_eval(formatted_string)
+        json_object = json.dumps(json_string, indent=4)
 
         with open("insert.out", "w") as outfile:
             outfile.write(json_object)

@@ -15,11 +15,18 @@ class InterfaceInsertDataService(BaseService):
     
     # Takes a string and imports it into a json formated file
     # Need to check and see how the string will be formated but works with a string formated like this:
-    # uuids = '{ "source_uid": "4aa950ae-f350-4a51-a21d-07817cd408e1", "metrics":[ {"metric_uid": "ac64dfb2-3d0f-48b5-88ab-cedf1a0c13d1", "value": "50"} ] }'
+    # Format of string passed to function "4aa950ae-f350-4a51-a21d-07817cd408e1`ac64dfb2-3d0f-48b5-88ab-cedf1a0c13d1`50"
+    # Final string format: '{ "source_uid": "4aa950ae-f350-4a51-a21d-07817cd408e1", "metrics":[ {"metric_uid": "ac64dfb2-3d0f-48b5-88ab-cedf1a0c13d1", "value": "50"} ] }'
     def dataToJSON(self, data): #take in the interface data
-        str = data
+        str = data.split('`')
 
-        uuid_string = ast.literal_eval(str)
+        parsed_string = {'source_uid': str[0], 
+                        'metric_uid': str[1], 
+                        'value': int(str[2])}
+        
+        formatted_string = '{ "source_uid": "%(source_uid)s", "metrics":[ {"metric_uid": "%(metric_uid)s", "value": "%(value)d"} ] }' % parsed_string
+
+        uuid_string = ast.literal_eval(formatted_string)
         json_object = json.dumps(uuid_string, indent=4)
 
         with open("insert.out", "w") as outfile:

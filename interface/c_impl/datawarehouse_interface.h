@@ -10,11 +10,7 @@
 
 typedef struct DWInterface DWInterface;
 
-void debug(DWInterface *dwi);
-
 char *json_parser(const char *json_filepath, char *source_name, char *metric_name, int val);
-void dw_interface_gen_metadata(DWInterface *dwi);
-void dw_interface_gen_insert(DWInterface *dwi);
 
 // Creates a new instance of the DWInterface struct.
 // It takes a username and password and puts them in the DWInterface.
@@ -69,13 +65,5 @@ char *dw_interface_query_data(const DWInterface *dwi, const char *query_string, 
 // Free()'s all memory allocated. This function
 // will PANIC if DWInterface has not been initialized.
 void dw_interface_destroy(DWInterface *dwi);
-
-// void dw_interface_set_groups(DWInterface *dwi, Group *groups);
-// Group *dw_interface_group_create(char *classification, char *group_name);
-// Source *dw_interface_source_create(char *name);
-// Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units);
-// void dw_interface_push_group(DWInterface *dwi, Group *group);
-// void dw_interface_push_source(Group *group, Source *source);
-// void dw_interface_push_metric(Source *source, Metric *metric);
 
 #endif // DATAWAREHOUSE_INTERFACE

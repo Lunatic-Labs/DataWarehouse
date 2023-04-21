@@ -360,110 +360,6 @@ static char *GET_request(const DWInterface *dwi, const char *url)
   return response;
 }
 
-static dynamic_array dynamic_array_create(DynamicArrayType type) {
-  dynamic_array da;
-  da.len = 0;
-  da.cap = 1;
-  da.type = type;
-  switch (type) {
-  case GROUP:
-    da.data.group = s_malloc(sizeof(Group));
-    break;
-  case SOURCE:
-    da.data.source = s_malloc(sizeof(Source));
-    break;
-  case METRIC:
-    da.data.metric = s_malloc(sizeof(Metric));
-    break;
-  default:
-    PANIC(Invalid DynamicArrayType);
-  }
-  return da;
-}
-
-static void dynamic_array_check_len(dynamic_array *da) {
-  if (da->len >= da->cap) {
-    da->cap *= 2;
-    switch (da->type) {
-    case GROUP:
-      da->data.group = s_realloc(da->data.group, sizeof(Group) * da->cap);
-      break;
-    case SOURCE:
-      da->data.source = s_realloc(da->data.source, sizeof(Source) * da->cap);
-      break;
-    case METRIC:
-      da->data.metric = s_realloc(da->data.metric, sizeof(Metric) * da->cap);
-      break;
-    default:
-      PANIC(Unreachable);
-    }
-  }
-}
-
-static void dynamic_array_push(dynamic_array *da, void *data) {
-  dynamic_array_check_len(da);
-  switch (da->type) {
-  case GROUP:
-    da->data.group[da->len++] = *(Group *)data;
-    break;
-  case SOURCE:
-    da->data.source[da->len++] = *(Source *)data;
-    break;
-  case METRIC:
-    da->data.metric[da->len++] = *(Metric *)data;
-    break;
-  default:
-    PANIC(Unreachable);
-  }
-}
-
-Group *dw_interface_group_create(char *classification, char *group_name) {
-  Group *group          = s_malloc(sizeof(Group));
-  group->classification = classification;
-  group->group_name     = group_name;
-  // group->sources        = NULL;
-  // group->sources_len    = 0;
-  // group->sources_cap    = 1;
-  return group;
-}
-
-Source *dw_interface_source_create(char *name) {
-  Source *source       = s_malloc(sizeof(Source));
-  source->name         = name;
-  // source->metrics      = NULL;
-  // source->metrics_len  = 0;
-  // source->metrics_cap  = 1;
-  return source;
-}
-
-Metric *dw_interface_metric_create(int asc, Datatype data_type, char *name, char *units) {
-  Metric *metric    = s_malloc(sizeof(Metric));
-  metric->asc       = asc;
-  metric->data_type = data_type;
-  metric->name = name;
-  metric->units = units;
-  return metric;
-}
-
-void debug(DWInterface *dwi) {
-  printf("--- METADATA ---\n");
-  for (size_t i = 0; i < dwi->groups.len; i++) {
-    Group g = dwi->groups.data.group[i];
-    printf("\tGroup: %ld\n", i+1);
-    printf("\t%s\t%s\n", g.classification, g.group_name);
-    for (size_t j = 0; j < g.sources.len; j++) {
-      Source s = g.sources.data.source[j];
-      printf("\t\tSource: %ld\n", j+1);
-      printf("\t\t%s\n", s.name);
-      for (size_t k = 0; k < s.metrics.len; k++) {
-        Metric m = s.metrics.data.metric[i];
-        printf("\t\t\tMetric: %ld\n", k+1);
-        printf("\t\t\t%d\t%d\t%s\t%s\n", m.asc, m.data_type, m.name, m.units);
-      }
-    }
-  }
-}
-
 #define QUOTE 34
 
 char *remove_char(char *str, size_t *trimmed_str_sz, char removal) {
@@ -471,11 +367,9 @@ char *remove_char(char *str, size_t *trimmed_str_sz, char removal) {
   char *trimmed_str = s_malloc(sizeof(char) * def_sz);
   memset(trimmed_str, '\0', sizeof(trimmed_str[0]) * def_sz);
   *trimmed_str_sz = 0;
-  for (size_t i = 0; *(str + i) != '\0'; i++) {
-    if (*(str + i) != removal) {
-      // todo: reallocate trimmed_str if needed.
-      trimmed_str[*trimmed_str_sz] = *(str + i);
-      *trimmed_str_sz += 1;
+  for (size_t i = 0; str[i] != '\0'; i++) {
+    if (str[i] != removal) {
+      trimmed_str[*trimmed_str_sz++] = str[i];
     }
   }
   return trimmed_str;
@@ -507,22 +401,27 @@ char *json_parser(const char *json_filepath,
 
     // Not sure if this is 100% necessary, but I'll put it here jic.
     memcpy(line, buf, TOKEN_CAP);
-    char *token = strtok(line, ": ");
+
+    size_t line_trim_sz = 0;
+    char *line_trim = remove_char(line, &line_trim_sz, ' ');
+
+    char *token = strtok(line, ":");
 
     while (token) {
-      if (token[0] == QUOTE || isalnum(token[0])) {
-        (void)strcpy(tokens[tokens_sz++], token);
-      }
       size_t token_trim_sz = 0;
-      token = strtok(NULL, " "); 
       char *token_trim = remove_char(token, &token_trim_sz, QUOTE);
+      (void)strcpy(tokens[tokens_sz++], token);
+      // if (token_trim[0] == QUOTE || isalnum(token_trim[0])) {
+      // }
+      token = strtok(NULL, ":"); 
     }
   }
 
   for (size_t i = 0; i < tokens_sz; i++) {
-    if (strcmp(tokens[i], n_source_name) == 0 || strcmp(tokens[i], n_metric_name) == 0){
-      printf("token: %s", tokens[i+1]);
-    }
+    printf("token: %s\n", tokens[i]);
+    // if (strcmp(tokens[i], n_source_name) == 0 || strcmp(tokens[i], n_metric_name) == 0){
+    //   printf("token: %s", tokens[i+1]);
+    // }
   }
 
   NOP(source_name);
@@ -532,22 +431,6 @@ char *json_parser(const char *json_filepath,
   free(n_source_name);
   free(n_metric_name);
   return NULL;
-}
-
-void dw_interface_push_group(DWInterface *dwi, Group *group) {
-  dynamic_array_push(&dwi->groups, (void *)group);
-}
-
-void dw_interface_push_source(Group *group, Source *source) {
-  NOP(group);
-  NOP(source);
-  UNIMPLEMENTED;
-}
-
-void dw_interface_push_metric(Group *group, Metric *metric) {
-  NOP(group);
-  NOP(metric);
-  UNIMPLEMENTED;
 }
 
 /*
@@ -600,8 +483,6 @@ DWInterface *dw_interface_create(char *username,
 
   // Build the GLOBAL_AUTHORITY.
   build_GLOBAL_AUTHORITY(dwi);
-
-  dwi->groups = dynamic_array_create(GROUP);
 
   return dwi;
 }

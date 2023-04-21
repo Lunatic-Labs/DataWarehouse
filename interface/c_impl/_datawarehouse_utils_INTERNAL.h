@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 
-#include "defs.h"
-
 /*
  * This is the utilities file for the DataWarehouse interface.
  * This file is for help during development as well as enums.
@@ -71,6 +69,7 @@ enum ErrorCode {
   OK = 1,
 };
 
+// Unused.
 typedef enum Datatype {
   TEXT         = 1,
   TUPLETYPE    = 2,
@@ -89,43 +88,6 @@ typedef enum Datatype {
   UNICODETEXT  = 15,
   INTERVAL     = 16,
 } Datatype;
-
-typedef enum DynamicArrayType {
-  GROUP  = 1,
-  SOURCE = 2,
-  METRIC = 3,
-} DynamicArrayType;
-
-/* Structs */
-
-typedef struct dynamic_array {
-  size_t len;
-  size_t cap;
-  union {
-    Group *group;
-    Source *source;
-    Metric *metric;
-  } data;
-  DynamicArrayType type;
-} dynamic_array;
-
-typedef struct Metric {
-  int       asc;
-  Datatype  data_type;
-  char      *name;
-  char      *units;
-} Metric;
-
-typedef struct Source {
-  char          *name;
-  dynamic_array metrics;
-} Source;
-
-typedef struct Group {
-  char          *classification;
-  char          *group_name;
-  dynamic_array sources;
-} Group;
  
 /*
  * DWInterface: A structure that represents a DataWarehouse interface. It contains
@@ -137,7 +99,6 @@ typedef struct DWInterface {
   char *password;
   CURL *curl_handle;
   char uuids[3][UUID_LEN + 1];
-  dynamic_array groups;
   enum ENV env;
   enum PORT port;
 } DWInterface;

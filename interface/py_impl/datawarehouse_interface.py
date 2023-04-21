@@ -1,3 +1,5 @@
+from datawarehouse_interface_config import *
+
 import os
 
 # import urllib       # This is most likely not needed, but idk.
@@ -18,13 +20,17 @@ import logging
 class Metric:
     def __init__(
         self,
+        asc,
         name,
-        value=None,
+        data_type,
+        units,
         uuid=None
     ):
+        self.asc = asc
+        self.data_type = data_type
         self.name = name
+        self.units = units
         self.uuid = uuid
-        self.value = value
 
 class Source:
     def __init__(
@@ -37,35 +43,26 @@ class Source:
         self.metrics = list(metric)
         self.uuid = uuid
 
+    def pushMetric(metric):
+        pass
+
 class Group:
     def  __init__(
         self,
         classification,
-        name,
+        group_name,
         source=None,
         uuid=None
     ):
         self.classification = classification
-        self.name = name
+        self.group_name = group_name
         self.sources = list(source)
         self.uuid = uuid
 
+    def pushSource(source):
+        pass
+
 class DWInterface:
-    remote_ip_address = "3.216.190.202"
-    local_ip_address = "127.0.0.1"
-
-    handshake_path = "/api/prepare/"
-    insert_path = "/api/store/"
-    query_path = "/api/query/"
-
-    interface_handshake_path = "/api/interface_prepare/"
-    interface_insert_path = "/api/interface_store/"
-    interface_query_path = "/api/interface_query/" 
-
-    development_port = ":5000"
-    staging_port = ":4000"
-    production_port = ":3000"
-
     def __init__(
         self,
         username,

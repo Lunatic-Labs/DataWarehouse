@@ -20,3 +20,6 @@ for example:
 
 ## Running the app
 after completing the setup process, use command `flask run` in the console to run. 
+
+### New to the Team?
+If you're new to the team read [this](https://github.com/Lunatic-Labs/DataWarehouse/blob/johntable-patch-1/docs/Notes%20from%20someone%20who%20took%20this%20class.pdf). This will give you a good idea as to what we are expected to do this semester.

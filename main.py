@@ -37,22 +37,38 @@ added to the object
 
 class CreateHandshake:
     def __init__(self, class_, name):
+        self.source_list = []
         self.dict_object = {"classification": class_, "group_name": name, "sources": []}
 
+    def append_source_into_group(self, name):        
+        self.source_list.append(0)
+        self.dict_object["sources"].append({"name": name, "metrics": []})
+
     def append_metric_into_last_source(self, asc, dt, name, units):
+        # Assert that there is a data source to add the metric into. 
+        assert len(self.source_list) > 0, \
+            "You must call the append_source_into_group function first to define your first data source."
+
+        self.source_list[len(self.source_list) - 1] += 1
         self.dict_object["sources"][len(self.dict_object['sources']) - 1]["metrics"].append(
             {"asc": asc, "dt": dt, "name": name, "units": units}
         )
 
-    def append_source_into_group(self, name):
-        self.dict_object["sources"].append({"name": name, "metrics": []})
-
     def convert_to_json(self):
+        # Assert that there is at least one source defined. 
+        assert len(self.source_list) > 0, "You must define at least one data source."
+
+        # Assert that each data source has at least one metric defined. 
+        for i in range(len(self.source_list)):
+            assert self.source_list[i] > 0, f"You must define at least one metric for data source #{i + 1}."
+
+        # Otherwise, everything is all good. 
         final_output = json.dumps(self.dict_object, indent=4)
         print(final_output)
 
 if __name__ == "__main__":
-    # Create the outermost layer of the onion
+    # Create the outermost layer of the onion.
+    # The CreateHandshake function must always be called first. 
     handshake = CreateHandshake("Academia", "Lunatic Labs University")
 
     # Add source #1

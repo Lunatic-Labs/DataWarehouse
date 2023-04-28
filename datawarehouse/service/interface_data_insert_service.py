@@ -23,14 +23,15 @@ class InterfaceInsertDataService(BaseService):
         parsed_string = {'source_uid': str[0], 
                         'metric_uid': str[1], 
                         'value': int(str[2])}
-        
-        formatted_string = '{ "source_uid": "%(source_uid)s", "metrics":[ {"metric_uid": "%(metric_uid)s", "value": "%(value)d"} ] }' % parsed_string
+
+        formatted_string = '{ "source_uid": "%(source_uid)s", "metrics":[ {"metric_uid": "%(metric_uid)s", "value": %(value)d} ] }' % parsed_string
 
         json_string = ast.literal_eval(formatted_string)
-        json_object = json.dumps(json_string, indent=4)
+        json_object = json.loads(formatted_string)
 
-        with open("insert.out", "w") as outfile:
-            outfile.write(json_object)
+        # json_object = json.dumps(json_string, indent=4)
+        # with open("insert.out", "w") as outfile:
+        #     outfile.write(json_object)
 
         return json_object #the created json
 
@@ -70,6 +71,7 @@ class InterfaceInsertDataService(BaseService):
         addData(self, data) -> void.
         Takes `data` JSON, parses and adds the value to the table.
         """
+        print(type(data))
         table = self._get_table(data["source_uid"])
         values = {}
         for _metric in data["metrics"]:

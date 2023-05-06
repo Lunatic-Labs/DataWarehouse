@@ -1,0 +1,21 @@
+{
+  "classification": "Academia",
+  "group_uid": "bf2d380c-1b92-4176-b5de-59b89c807cf7",
+  "location": null,
+  "name": "Lunatic Labs University",
+  "sources": [
+    {
+      "metrics": [
+        {
+          "asc": false,
+          "data_type": "4",
+          "metric_uid": "785c54ed-db29-4c90-9234-f0a40fe20034",
+          "name": "students_present",
+          "units": "students"
+        }
+      ],
+      "name": "Python Class Stats",
+      "source_uid": "cb5ccf7c-f02e-4d82-9a42-352b92cac634"
+    }
+  ]
+}
